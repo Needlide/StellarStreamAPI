@@ -1,6 +1,9 @@
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Mvc.Versioning;
-using Microsoft.Extensions.Options;
-using StellarStreamAPI;
+using StellarStreamAPI.Database;
+using StellarStreamAPI.Security;
+using StellarStreamAPI.Security.Validators;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,7 +20,11 @@ builder.Services.AddCors(options =>
     options.AddPolicy(name: AllowedOriginsPolicyName, policy => { policy.WithOrigins(appConfig.Cors.AllowedOrigins.ToArray()).AllowCredentials().AllowAnyHeader(); });
 });
 
-builder.Services.AddControllers();
+builder.Services.AddSingleton(new DatabaseContext(builder.Configuration));
+
+builder.Services.AddFluentValidationAutoValidation().AddFluentValidationClientsideAdapters();
+builder.Services.AddValidatorsFromAssemblyContaining<ApiKeyValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<ApiKeyConsumerValidator>();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -41,6 +48,7 @@ if (app.Environment.IsDevelopment())
 else
 {
     app.UseHsts();
+    app.UseExceptionHandler("/error");
 }
 
 app.UseHttpsRedirection();

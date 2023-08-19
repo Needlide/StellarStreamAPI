@@ -1,4 +1,4 @@
-﻿namespace StellarStreamAPI
+﻿namespace StellarStreamAPI.Security
 {
     public class AppConfig
     {
