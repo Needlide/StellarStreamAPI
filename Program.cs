@@ -1,12 +1,20 @@
 using Microsoft.AspNetCore.Mvc.Versioning;
-
-string AllowedOriginsPolicyName = "AllowedAnyOrigins";
+using Microsoft.Extensions.Options;
+using StellarStreamAPI;
 
 var builder = WebApplication.CreateBuilder(args);
 
+string AllowedOriginsPolicyName = "AllowedAnyOrigins";
+string AppConfigConnectionString = builder.Configuration.GetConnectionString("AppConfig");
+
+builder.Configuration.AddAzureAppConfiguration(AppConfigConnectionString);
+builder.Services.Configure<AppConfig>(builder.Configuration.GetSection("StellarStreamAppConfig"));
+var appConfig = new AppConfig();
+builder.Configuration.GetSection("StellarStreamAppConfig").Bind(appConfig);
+
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy(name: AllowedOriginsPolicyName, policy => { policy.AllowAnyOrigin().AllowCredentials().AllowAnyHeader(); });
+    options.AddPolicy(name: AllowedOriginsPolicyName, policy => { policy.WithOrigins(appConfig.Cors.AllowedOrigins.ToArray()).AllowCredentials().AllowAnyHeader(); });
 });
 
 builder.Services.AddControllers();
