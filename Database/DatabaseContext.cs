@@ -24,7 +24,7 @@ namespace StellarStreamAPI.Database
             _apiKeyConsumerCollection = _database.GetCollection<ApiKeyConsumer>("ApiKeysConsumers");
         }
 
-        async Task<Result<bool>> IMongoDatabaseContext.DeleteApiKeyAsync(ApiKey key)
+        public async Task<Result<bool>> DeleteApiKeyAsync(ApiKey key)
         {
             try
             {
@@ -33,13 +33,13 @@ namespace StellarStreamAPI.Database
                     return Result<bool>.Fail(new ArgumentNullException(nameof(key)));
                 }
                 await _apiKeyCollection.DeleteOneAsync(x => x.KeyId == key.KeyId);
-                return Result<bool>.Success();
+                return Result<bool>.Success(true);
             }
             catch (MongoException ex) { return Result<bool>.Fail(ex); }
             catch (Exception ex) { return Result<bool>.Fail(ex); }
         }
 
-        async Task<Result<bool>> IMongoDatabaseContext.DeleteApiKeyConsumerAsync(ApiKeyConsumer consumer)
+        public async Task<Result<bool>> DeleteApiKeyConsumerAsync(ApiKeyConsumer consumer)
         {
             try
             {
@@ -48,36 +48,35 @@ namespace StellarStreamAPI.Database
                     return Result<bool>.Fail(new ArgumentNullException(nameof(consumer)));
                 }
                 await _apiKeyConsumerCollection.DeleteOneAsync(x => x.Email == consumer.Email);
-                return Result<bool>.Success();
+                return Result<bool>.Success(true);
             }
             catch (MongoException ex) { return Result<bool>.Fail(ex); }
             catch (Exception ex) { return Result<bool>.Fail(ex); }
         }
 
-        async Task<Result<ApiKey>> IMongoDatabaseContext.GetApiKeyAsync(string apiKeyName)
+        public async Task<Result<ApiKey>> GetApiKeyAsync(string apiKeyName)
         {
             try
             {
                 var value = await _apiKeyCollection.FindAsync(x => x.KeyName == apiKeyName);
-                Result<ApiKey>.Value = value.First();
-                return Result<ApiKey>.Success();
+                return Result<ApiKey>.Success(value.First());
             }
             catch (MongoException ex) { return Result<ApiKey>.Fail(ex); }
             catch (Exception ex) { return Result<ApiKey>.Fail(ex); }
         }
 
-        async Task<Result<List<ApiKey>>> IMongoDatabaseContext.GetApiKeysAsync()
+        public async Task<Result<List<ApiKey>>> GetApiKeysAsync()
         {
             try
             {
-                Result<List<ApiKey>>.Value = await _apiKeyCollection.Find(_ => true).ToListAsync();
-                return Result<List<ApiKey>>.Success();
+                var result = await _apiKeyCollection.Find(_ => true).ToListAsync();
+                return Result<List<ApiKey>>.Success(result);
             }
             catch (MongoException ex) { return Result<List<ApiKey>>.Fail(ex); }
             catch (Exception ex) { return Result<List<ApiKey>>.Fail(ex); }
         }
 
-        async Task<Result<bool>> IMongoDatabaseContext.SaveApiKeyAsync(ApiKey key)
+        public async Task<Result<bool>> SaveApiKeyAsync(ApiKey key)
         {
             try
             {
@@ -86,13 +85,13 @@ namespace StellarStreamAPI.Database
                     return Result<bool>.Fail(new ArgumentNullException(nameof(key)));
                 }
                 await _apiKeyCollection.InsertOneAsync(key);
-                return Result<bool>.Success();
+                return Result<bool>.Success(true);
             }
             catch (MongoWriteException ex) when (ex.WriteError.Category == ServerErrorCategory.DuplicateKey) { return Result<bool>.Fail(ex); }
             catch (Exception ex) { return Result<bool>.Fail(ex); }
         }
 
-        async Task<Result<bool>> IMongoDatabaseContext.SaveApiKeyConsumerAsync(ApiKeyConsumer consumer)
+        public async Task<Result<bool>> SaveApiKeyConsumerAsync(ApiKeyConsumer consumer)
         {
             try
             {
@@ -101,9 +100,38 @@ namespace StellarStreamAPI.Database
                     return Result<bool>.Fail(new ArgumentNullException(nameof(consumer)));
                 }
                 await _apiKeyConsumerCollection.InsertOneAsync(consumer);
-                return Result<bool>.Success();
+                return Result<bool>.Success(true);
             }
             catch (MongoWriteException ex) when (ex.WriteError.Category == ServerErrorCategory.DuplicateKey) { return Result<bool>.Fail(ex); }
+            catch (Exception ex) { return Result<bool>.Fail(ex); }
+        }
+
+        public async Task<Result<List<ApiKeyConsumer>>> GetApiKeyConsumersAsync()
+        {
+            try
+            {
+                var result = await _apiKeyConsumerCollection.Find(_ => true).ToListAsync();
+                return Result<List<ApiKeyConsumer>>.Success(result);
+            }
+            catch (MongoException ex) { return Result<List<ApiKeyConsumer>>.Fail(ex); }
+            catch (Exception ex) { return Result<List<ApiKeyConsumer>>.Fail(ex); }
+        }
+
+        public async Task<Result<bool>> ApiKeyConsumerExistAsync(string email)
+        {
+            try
+            {
+                var result = await _apiKeyConsumerCollection.FindAsync(x => x.Email.Equals(email));
+                if(result.Current.Any())
+                {
+                    return Result<bool>.Success(true);
+                }
+                else
+                {
+                    return Result<bool>.Success(false);
+                }
+            }
+            catch (MongoException ex) { return Result<bool>.Fail(ex); }
             catch (Exception ex) { return Result<bool>.Fail(ex); }
         }
     }

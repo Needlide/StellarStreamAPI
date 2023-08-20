@@ -10,5 +10,7 @@ namespace StellarStreamAPI.Interfaces
         public Task<Result<ApiKey>> GetApiKeyAsync(string apiKeyName);
         public Task<Result<bool>> DeleteApiKeyAsync(ApiKey key);
         public Task<Result<bool>> DeleteApiKeyConsumerAsync(ApiKeyConsumer consumer);
+        public Task<Result<List<ApiKeyConsumer>>> GetApiKeyConsumersAsync();
+        public Task<Result<bool>> ApiKeyConsumerExistAsync(string email);
     }
 }
