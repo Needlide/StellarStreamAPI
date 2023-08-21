@@ -8,11 +8,19 @@ using StellarStreamAPI.Interfaces;
 using StellarStreamAPI.Security;
 using StellarStreamAPI.Security.JWT;
 using StellarStreamAPI.Security.Validators;
+using System.Security.Cryptography;
 
 var builder = WebApplication.CreateBuilder(args);
 
-string AllowedOriginsPolicyName = "AllowedAnyOrigins";
+string AllowedOriginsPolicyName = "AllowedSpecificOrigins";
 string AppConfigConnectionString = builder.Configuration.GetConnectionString("AppConfig");
+
+builder.Services.AddSingleton<IMongoDatabaseContext, DatabaseContext>();
+builder.Services.AddSingleton(typeof(SymmetricEncryptor));
+
+builder.Configuration.AddUserSecrets<Program>();
+Aes aes = Aes.Create();
+builder.Configuration.GetSection("Security")["EncoderKey"] = aes.Key.ToString();
 
 builder.Configuration.AddAzureAppConfiguration(AppConfigConnectionString);
 builder.Services.Configure<AppConfig>(builder.Configuration.GetSection("StellarStreamAppConfig"));
@@ -23,8 +31,6 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: AllowedOriginsPolicyName, policy => { policy.WithOrigins(appConfig.Cors.AllowedOrigins.ToArray()).AllowCredentials().AllowAnyHeader(); });
 });
-
-builder.Services.AddSingleton<IMongoDatabaseContext, DatabaseContext>();
 
 builder.Services.AddAuthentication(options =>
 {
@@ -61,6 +67,9 @@ builder.Services.AddApiVersioning(options =>
     options.ReportApiVersions = true;
     options.ApiVersionReader = new HeaderApiVersionReader("api-version");
 });
+
+builder.Logging.AddDebug();
+builder.Logging.SetMinimumLevel(LogLevel.Information);
 
 var app = builder.Build();
 

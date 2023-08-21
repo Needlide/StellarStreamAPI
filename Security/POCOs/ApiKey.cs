@@ -1,4 +1,5 @@
-﻿using MongoDB.Bson.Serialization.Attributes;
+﻿using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace StellarStreamAPI.Security.POCOs
 {
@@ -11,6 +12,7 @@ namespace StellarStreamAPI.Security.POCOs
     public class ApiKey
     {
         [BsonId]
+        [BsonRepresentation(BsonType.ObjectId)]
         public long KeyId { get; set; }
         public string KeyName { get; set; } = string.Empty;
         public string KeyValue { get; set; } = string.Empty;

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using StellarStreamAPI.Database;
+using StellarStreamAPI.Security;
 using StellarStreamAPI.Security.POCOs;
 using System.Net;
 
@@ -10,10 +11,12 @@ namespace StellarStreamAPI.Controllers
     public class AdministrativeController : ControllerBase
     {
         private readonly DatabaseContext _dbContext;
+        private readonly SymmetricEncryptor _symmetricEncryptor;
 
-        public AdministrativeController(DatabaseContext dbContext)
+        public AdministrativeController(DatabaseContext dbContext, SymmetricEncryptor symmetricEncryptor)
         {
             _dbContext = dbContext;
+            _symmetricEncryptor = symmetricEncryptor;
         }
 
         [HttpPost("/user")]
@@ -24,11 +27,13 @@ namespace StellarStreamAPI.Controllers
                 return BadRequest(ModelState);
             }
 
-            Result<bool> emailExistResult = await _dbContext.ApiKeyConsumerExistAsync(model.Email);
+            string encryptedEmail = _symmetricEncryptor.Encrypt(model.Email);
+
+            Result<bool> emailExistResult = await _dbContext.ApiKeyConsumerExistAsync(encryptedEmail);
 
             if (!emailExistResult.IsSuccess)
             {
-                return Problem("Error checking email existence.", statusCode: (int)HttpStatusCode.InternalServerError);
+                return Problem("Error occured while checking is email registered.", statusCode: (int)HttpStatusCode.InternalServerError);
             }
 
             if (emailExistResult.Value)
@@ -36,12 +41,12 @@ namespace StellarStreamAPI.Controllers
                 return Conflict(new { message = "Email already registered." });
             }
 
-            ApiKeyConsumer consumer = new() { Email = model.Email };
+            ApiKeyConsumer consumer = new() { Email = encryptedEmail };
             Result<bool> saveResult = await _dbContext.SaveApiKeyConsumerAsync(consumer);
 
             if (!saveResult.IsSuccess)
             {
-                return Problem("Error saving user.", statusCode: (int)HttpStatusCode.InternalServerError);
+                return Problem("Error occured while saving user.", statusCode: (int)HttpStatusCode.InternalServerError);
             }
 
             return Ok(new { message = "Registered successfully." });
