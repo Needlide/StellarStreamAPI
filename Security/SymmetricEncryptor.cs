@@ -1,8 +1,9 @@
-﻿using System.Security.Cryptography;
+﻿using StellarStreamAPI.Interfaces;
+using System.Security.Cryptography;
 
 namespace StellarStreamAPI.Security
 {
-    public class SymmetricEncryptor
+    public class SymmetricEncryptor : IEncryptor
     {
         private readonly ILogger<SymmetricEncryptor> _logger;
         private readonly IConfiguration _configuration;

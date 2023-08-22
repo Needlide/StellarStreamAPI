@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
-using StellarStreamAPI.Database;
+using StellarStreamAPI.Interfaces;
 using StellarStreamAPI.Security;
 using StellarStreamAPI.Security.JWT;
 using StellarStreamAPI.Security.POCOs;
@@ -18,17 +18,18 @@ namespace StellarStreamAPI.Controllers
     [ApiController]
     public class AdministrativeController : ControllerBase
     {
-        private readonly DatabaseContext _dbContext;
+        private readonly IMongoDatabaseContext _dbContext;
         private readonly SymmetricEncryptor _symmetricEncryptor;
         private readonly ILogger _logger;
 
-        public AdministrativeController(DatabaseContext dbContext, SymmetricEncryptor symmetricEncryptor, ILogger logger)
+        public AdministrativeController(IMongoDatabaseContext dbContext, SymmetricEncryptor symmetricEncryptor, ILogger logger)
         {
             _dbContext = dbContext;
             _symmetricEncryptor = symmetricEncryptor;
             _logger = logger;
         }
 
+        [AllowAnonymous]
         [HttpPost("/user")]
         public async Task<IActionResult> UserRegistration([FromBody]ApiKeyConsumerRegistrationModel model)
         {

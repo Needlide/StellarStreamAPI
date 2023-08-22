@@ -17,8 +17,10 @@ var builder = WebApplication.CreateBuilder(args);
 string AllowedOriginsPolicyName = "AllowedSpecificOrigins";
 string AppConfigConnectionString = builder.Configuration.GetConnectionString("AppConfig");
 
-builder.Services.AddSingleton<IMongoDatabaseContext, DatabaseContext>();
-builder.Services.AddTransient(typeof(SymmetricEncryptor));
+builder.Services.AddScoped<IMongoDatabaseContext, DatabaseContext>();
+builder.Services.AddTransient<IEncryptor, SymmetricEncryptor>();
+
+builder.Services.AddControllers();
 
 builder.Configuration.AddUserSecrets<Program>();
 Aes aes = Aes.Create();
@@ -32,7 +34,7 @@ builder.Configuration.GetSection("StellarStreamAppConfig").Bind(appConfig);
 builder.Services.AddCors(options =>
 {
     //options.AddPolicy(name: AllowedOriginsPolicyName, policy => { policy.WithOrigins(appConfig.Cors.AllowedOrigins.ToArray()).AllowCredentials().AllowAnyHeader(); });
-    options.AddPolicy("DebugPolicy", policy => { policy.AllowAnyOrigin().AllowCredentials().AllowAnyHeader().AllowAnyMethod(); });
+    options.AddPolicy("CorsDebugPolicy", policy => { policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod(); });
 });
 
 builder.Services.AddAuthentication(options =>
@@ -63,6 +65,11 @@ builder.Services.AddAuthentication(options =>
             return context.Response.WriteAsync(result);
         }
     };
+});
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AuthorizationDebugPolicy", policy => { policy.RequireAuthenticatedUser(); });
 });
 
 builder.Services.AddFluentValidationAutoValidation().AddFluentValidationClientsideAdapters();
