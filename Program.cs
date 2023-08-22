@@ -31,7 +31,8 @@ builder.Configuration.GetSection("StellarStreamAppConfig").Bind(appConfig);
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy(name: AllowedOriginsPolicyName, policy => { policy.WithOrigins(appConfig.Cors.AllowedOrigins.ToArray()).AllowCredentials().AllowAnyHeader(); });
+    //options.AddPolicy(name: AllowedOriginsPolicyName, policy => { policy.WithOrigins(appConfig.Cors.AllowedOrigins.ToArray()).AllowCredentials().AllowAnyHeader(); });
+    options.AddPolicy("DebugPolicy", policy => { policy.AllowAnyOrigin().AllowCredentials().AllowAnyHeader().AllowAnyMethod(); });
 });
 
 builder.Services.AddAuthentication(options =>
