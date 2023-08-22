@@ -24,15 +24,11 @@ namespace StellarStreamAPI.Database
             _apiKeyConsumerCollection = _database.GetCollection<ApiKeyConsumer>("ApiKeysConsumers");
         }
 
-        public async Task<Result<bool>> DeleteApiKeyAsync(ApiKey key)
+        public async Task<Result<bool>> DeleteApiKeyAsync(long keyId)
         {
             try
             {
-                if (key == null)
-                {
-                    return Result<bool>.Fail(new ArgumentNullException(nameof(key)));
-                }
-                await _apiKeyCollection.DeleteOneAsync(x => x.KeyId == key.KeyId);
+                await _apiKeyCollection.DeleteOneAsync(x => x.KeyId.Equals(keyId));
                 return Result<bool>.Success(true);
             }
             catch (MongoException ex) { return Result<bool>.Fail(ex); }
@@ -54,15 +50,15 @@ namespace StellarStreamAPI.Database
             catch (Exception ex) { return Result<bool>.Fail(ex); }
         }
 
-        public async Task<Result<ApiKey>> GetApiKeyAsync(string apiKeyName)
+        public async Task<Result<List<ApiKey>>> GetApiKeysAsync(string apiKeyName)
         {
             try
             {
                 var value = await _apiKeyCollection.FindAsync(x => x.KeyName == apiKeyName);
-                return Result<ApiKey>.Success(value.First());
+                return Result<List<ApiKey>>.Success(value.ToList());
             }
-            catch (MongoException ex) { return Result<ApiKey>.Fail(ex); }
-            catch (Exception ex) { return Result<ApiKey>.Fail(ex); }
+            catch (MongoException ex) { return Result<List<ApiKey>>.Fail(ex); }
+            catch (Exception ex) { return Result<List<ApiKey>>.Fail(ex); }
         }
 
         public async Task<Result<List<ApiKey>>> GetApiKeysAsync()
@@ -122,7 +118,36 @@ namespace StellarStreamAPI.Database
             try
             {
                 var result = await _apiKeyConsumerCollection.FindAsync(x => x.Email.Equals(email));
-                if(result.Current.Any())
+                if(result.Any())
+                {
+                    return Result<bool>.Success(true);
+                }
+                else
+                {
+                    return Result<bool>.Success(false);
+                }
+            }
+            catch (MongoException ex) { return Result<bool>.Fail(ex); }
+            catch (Exception ex) { return Result<bool>.Fail(ex); }
+        }
+
+        public async Task<Result<ApiKeyConsumer>> GetApiKeyConsumerAsync(string email)
+        {
+            try
+            {
+                var result = await _apiKeyConsumerCollection.FindAsync(x => x.Email.Equals(email));
+                return Result<ApiKeyConsumer>.Success(result.First());
+            }
+            catch (MongoException ex) { return Result<ApiKeyConsumer>.Fail(ex); }
+            catch (Exception ex) { return Result<ApiKeyConsumer>.Fail(ex); }
+        }
+
+        public async Task<Result<bool>> ApiKeyExistsAsync(long keyId)
+        {
+            try
+            {
+                var result = await _apiKeyCollection.FindAsync(x => x.KeyId.Equals(keyId));
+                if(result.Any())
                 {
                     return Result<bool>.Success(true);
                 }
