@@ -1,6 +1,6 @@
 ﻿using MongoDB.Driver;
 using StellarStreamAPI.Interfaces;
-using StellarStreamAPI.Security.POCOs;
+using StellarStreamAPI.POCOs;
 using System.Security.Authentication;
 
 namespace StellarStreamAPI.Database

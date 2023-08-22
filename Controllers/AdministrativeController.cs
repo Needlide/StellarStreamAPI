@@ -2,10 +2,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using StellarStreamAPI.Interfaces;
+using StellarStreamAPI.POCOs;
+using StellarStreamAPI.POCOs.Models;
 using StellarStreamAPI.Security;
 using StellarStreamAPI.Security.JWT;
-using StellarStreamAPI.Security.POCOs;
-using StellarStreamAPI.Security.POCOs.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Security.Claims;
@@ -52,7 +52,12 @@ namespace StellarStreamAPI.Controllers
                 return Conflict(new { message = "Email already registered." });
             }
 
-            ApiKeyConsumer consumer = new() { Email = model.Email, Password = encryptedPass };
+            ApiKeyConsumer consumer = new()
+            {
+                UserId = BitConverter.ToInt64(Guid.NewGuid().ToByteArray(), 0),
+                Email = model.Email,
+                Password = encryptedPass
+            };
             Result<bool> saveResult = await _dbContext.SaveApiKeyConsumerAsync(consumer);
 
             if (!saveResult.IsSuccess)
@@ -122,6 +127,7 @@ namespace StellarStreamAPI.Controllers
 
             ApiKey userApiKey = new()
             {
+                KeyId = BitConverter.ToInt64(Guid.NewGuid().ToByteArray(), 0),
                 KeyName = userEmail,
                 KeyValue = _symmetricEncryptor.Encrypt(apiKey),
                 UserId = consumer.UserId,
