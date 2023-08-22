@@ -16,7 +16,7 @@ string AllowedOriginsPolicyName = "AllowedSpecificOrigins";
 string AppConfigConnectionString = builder.Configuration.GetConnectionString("AppConfig");
 
 builder.Services.AddSingleton<IMongoDatabaseContext, DatabaseContext>();
-builder.Services.AddSingleton(typeof(SymmetricEncryptor));
+builder.Services.AddTransient(typeof(SymmetricEncryptor));
 
 builder.Configuration.AddUserSecrets<Program>();
 Aes aes = Aes.Create();
