@@ -3,6 +3,8 @@ using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.IdentityModel.Tokens;
+using MongoDB.Driver;
+using StellarStreamAPI;
 using StellarStreamAPI.Database;
 using StellarStreamAPI.Interfaces;
 using StellarStreamAPI.Security;
@@ -12,28 +14,30 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text.Json;
 
+//Can't connect to the database
+
 var builder = WebApplication.CreateBuilder(args);
 
 string AllowedOriginsPolicyName = "AllowedSpecificOrigins";
-string AppConfigConnectionString = builder.Configuration.GetConnectionString("AppConfig");
+
+builder.Services.Configure<StellarStreamApiSecurityDBSettings>(builder.Configuration.GetSection("stellarstreamapisecuritydb"));
+
+builder.Services.AddSingleton<IMongoClient>(new MongoClient(builder.Configuration.GetConnectionString("SecurityMongoDB")));
 
 builder.Services.AddScoped<IMongoDatabaseContext, DatabaseContext>();
 builder.Services.AddTransient<IEncryptor, SymmetricEncryptor>();
+
+builder.Services.AddLogging();
 
 builder.Services.AddControllers();
 
 builder.Configuration.AddUserSecrets<Program>();
 Aes aes = Aes.Create();
+aes.GenerateKey();
 builder.Configuration.GetSection("Security")["EncoderKey"] = aes.Key.ToString();
-
-builder.Configuration.AddAzureAppConfiguration(AppConfigConnectionString);
-builder.Services.Configure<AppConfig>(builder.Configuration.GetSection("StellarStreamAppConfig"));
-var appConfig = new AppConfig();
-builder.Configuration.GetSection("StellarStreamAppConfig").Bind(appConfig);
 
 builder.Services.AddCors(options =>
 {
-    //options.AddPolicy(name: AllowedOriginsPolicyName, policy => { policy.WithOrigins(appConfig.Cors.AllowedOrigins.ToArray()).AllowCredentials().AllowAnyHeader(); });
     options.AddPolicy("CorsDebugPolicy", policy => { policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod(); });
 });
 

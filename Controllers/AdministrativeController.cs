@@ -4,7 +4,6 @@ using Microsoft.IdentityModel.Tokens;
 using StellarStreamAPI.Interfaces;
 using StellarStreamAPI.POCOs;
 using StellarStreamAPI.POCOs.Models;
-using StellarStreamAPI.Security;
 using StellarStreamAPI.Security.JWT;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
@@ -19,10 +18,10 @@ namespace StellarStreamAPI.Controllers
     public class AdministrativeController : ControllerBase
     {
         private readonly IMongoDatabaseContext _dbContext;
-        private readonly SymmetricEncryptor _symmetricEncryptor;
-        private readonly ILogger _logger;
+        private readonly IEncryptor _symmetricEncryptor;
+        private readonly ILogger<AdministrativeController> _logger;
 
-        public AdministrativeController(IMongoDatabaseContext dbContext, SymmetricEncryptor symmetricEncryptor, ILogger logger)
+        public AdministrativeController(IMongoDatabaseContext dbContext, IEncryptor symmetricEncryptor, ILogger<AdministrativeController> logger)
         {
             _dbContext = dbContext;
             _symmetricEncryptor = symmetricEncryptor;

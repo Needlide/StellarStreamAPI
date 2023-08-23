@@ -1,27 +1,24 @@
-﻿using MongoDB.Driver;
+﻿using Microsoft.Extensions.Options;
+using MongoDB.Driver;
 using StellarStreamAPI.Interfaces;
 using StellarStreamAPI.POCOs;
-using System.Security.Authentication;
 
 namespace StellarStreamAPI.Database
 {
     public class DatabaseContext : IMongoDatabaseContext
     {
-        private readonly IConfiguration _configuration;
-        private readonly MongoClient _client;
-        private readonly IMongoDatabase _database;
+        private readonly ILogger<DatabaseContext> _logger;
         private readonly IMongoCollection<ApiKey> _apiKeyCollection;
         private readonly IMongoCollection<ApiKeyConsumer> _apiKeyConsumerCollection;
 
-        public DatabaseContext(IConfiguration configuration)
+        public DatabaseContext(IOptions<StellarStreamApiSecurityDBSettings> databaseSettings, ILogger<DatabaseContext> logger)
         {
-            _configuration = configuration;
-            MongoClientSettings settings = MongoClientSettings.FromUrl(new MongoUrl(_configuration.GetConnectionString("AzureCosmosDBMongoDB")));
-            settings.SslSettings = new SslSettings() { EnabledSslProtocols = SslProtocols.Tls12 };
-            _client = new MongoClient(settings);
-            _database = _client.GetDatabase("stellarstreamapisecuritydb");
-            _apiKeyCollection = _database.GetCollection<ApiKey>("ApiKeys");
-            _apiKeyConsumerCollection = _database.GetCollection<ApiKeyConsumer>("ApiKeysConsumers");
+            var mongoClient = new MongoClient(databaseSettings.Value.ConnectionString);
+            var database = mongoClient.GetDatabase(databaseSettings.Value.DatabaseName);
+            _apiKeyCollection = database.GetCollection<ApiKey>(databaseSettings.Value.ApiKeysCollectionName);
+            _apiKeyConsumerCollection = database.GetCollection<ApiKeyConsumer>(databaseSettings.Value.ApiKeysConsumersCollectionName);
+
+            _logger = logger;
         }
 
         public async Task<Result<bool>> DeleteApiKeyAsync(long keyId)
@@ -127,8 +124,8 @@ namespace StellarStreamAPI.Database
                     return Result<bool>.Success(false);
                 }
             }
-            catch (MongoException ex) { return Result<bool>.Fail(ex); }
-            catch (Exception ex) { return Result<bool>.Fail(ex); }
+            catch (MongoException ex) { _logger.LogError(ex, "An error occurred in ApiKeyConsumerExistAsync method: {Message}", ex.Message); return Result<bool>.Fail(ex); }
+            catch (Exception ex) { _logger.LogError(ex, "An error occurred in ApiKeyConsumerExistAsync method: {Message}", ex.Message); return Result<bool>.Fail(ex); }
         }
 
         public async Task<Result<ApiKeyConsumer>> GetApiKeyConsumerAsync(string email)
