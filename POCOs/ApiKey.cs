@@ -12,8 +12,7 @@ namespace StellarStreamAPI.POCOs
     public class ApiKey
     {
         [BsonId]
-        [BsonRepresentation(BsonType.Int64)]
-        public long KeyId { get; set; }
+        public ObjectId KeyId { get; set; }
         public string KeyName { get; set; } = string.Empty;
         public string KeyValue { get; set; } = string.Empty;
         public DateTime CreationDate { get; set; } = DateTime.Now;

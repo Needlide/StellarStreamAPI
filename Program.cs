@@ -1,8 +1,10 @@
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using MongoDB.Driver;
 using StellarStreamAPI.Database;
 using StellarStreamAPI.Interfaces;
@@ -11,7 +13,6 @@ using StellarStreamAPI.Security;
 using StellarStreamAPI.Security.JWT;
 using StellarStreamAPI.Security.Validators;
 using System.Net;
-using System.Security.Cryptography;
 using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -30,9 +31,6 @@ builder.Services.AddLogging();
 builder.Services.AddControllers();
 
 builder.Configuration.AddUserSecrets<Program>();
-Aes aes = Aes.Create();
-aes.GenerateKey();
-builder.Configuration.GetSection("Security")["EncoderKey"] = aes.Key.ToString();
 
 builder.Services.AddCors(options =>
 {
@@ -53,7 +51,7 @@ builder.Services.AddAuthentication(options =>
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
         ValidIssuer = "StellarStreamAPI",
-        ValidAudience = "AstroNews",
+        ValidAudience = "Users",
         IssuerSigningKey = new RsaSecurityKey(JWTKeyReader.ReadPublicKey("public_key.pem"))
     };
     options.Events = new JwtBearerEvents
@@ -75,13 +73,39 @@ builder.Services.AddAuthorization(options =>
 });
 
 builder.Services.AddFluentValidationAutoValidation().AddFluentValidationClientsideAdapters();
-builder.Services.AddValidatorsFromAssemblyContaining<ApiKeyValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<ApiKeyConsumerValidator>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "JWT Authorization header using the Bearer scheme."
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+              new OpenApiSecurityScheme
+              {
+                  Reference = new OpenApiReference
+                  {
+                      Type = ReferenceType.SecurityScheme,
+                      Id = "Bearer"
+                  }
+              },
+              Array.Empty<string>()
+        }
+    });
+});
+
 builder.Services.AddApiVersioning(options =>
 {
     options.RegisterMiddleware = true;
@@ -99,7 +123,12 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        // Enable the "Authorize" button in Swagger UI
+        c.EnableDeepLinking();
+        c.DefaultModelsExpandDepth(-1);
+    });
     app.UseDeveloperExceptionPage();
 }
 else

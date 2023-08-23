@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Options;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using StellarStreamAPI.Interfaces;
 using StellarStreamAPI.POCOs;
@@ -22,7 +23,7 @@ namespace StellarStreamAPI.Database
             _logger = logger;
         }
 
-        public async Task<Result<bool>> DeleteApiKeyAsync(long keyId)
+        public async Task<Result<bool>> DeleteApiKeyAsync(ObjectId keyId)
         {
             try
             {
@@ -140,7 +141,7 @@ namespace StellarStreamAPI.Database
             catch (Exception ex) { return Result<ApiKeyConsumer>.Fail(ex); }
         }
 
-        public async Task<Result<bool>> ApiKeyExistsAsync(long keyId)
+        public async Task<Result<bool>> ApiKeyExistsAsync(ObjectId keyId)
         {
             try
             {
