@@ -14,8 +14,6 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text.Json;
 
-//Can't connect to the database
-
 var builder = WebApplication.CreateBuilder(args);
 
 string AllowedOriginsPolicyName = "AllowedSpecificOrigins";
