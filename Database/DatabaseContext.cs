@@ -2,6 +2,7 @@
 using MongoDB.Driver;
 using StellarStreamAPI.Interfaces;
 using StellarStreamAPI.POCOs;
+using StellarStreamAPI.POCOs.Models;
 
 namespace StellarStreamAPI.Database
 {
