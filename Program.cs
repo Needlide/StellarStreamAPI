@@ -23,7 +23,7 @@ builder.Services.Configure<StellarStreamApiSecurityDBSettings>(builder.Configura
 
 builder.Services.AddSingleton<IMongoClient>(new MongoClient(builder.Configuration.GetConnectionString("SecurityMongoDB")));
 
-builder.Services.AddScoped<IMongoDatabaseContext, DatabaseContext>();
+builder.Services.AddScoped<IMongoSecurityDatabaseContext, SecurityDatabaseContext>();
 builder.Services.AddTransient<IEncryptor, SymmetricEncryptor>();
 
 builder.Services.AddLogging();

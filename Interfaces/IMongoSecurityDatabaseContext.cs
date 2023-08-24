@@ -1,9 +1,9 @@
 ﻿using MongoDB.Bson;
-using StellarStreamAPI.POCOs;
+using StellarStreamAPI.POCOs.Security;
 
 namespace StellarStreamAPI.Interfaces
 {
-    public interface IMongoDatabaseContext
+    public interface IMongoSecurityDatabaseContext
     {
         public Task<Result<bool>> SaveApiKeyAsync(ApiKey key);
         public Task<Result<bool>> SaveApiKeyConsumerAsync(ApiKeyConsumer consumer);

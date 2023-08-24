@@ -2,18 +2,18 @@
 using MongoDB.Bson;
 using MongoDB.Driver;
 using StellarStreamAPI.Interfaces;
-using StellarStreamAPI.POCOs;
 using StellarStreamAPI.POCOs.Models;
+using StellarStreamAPI.POCOs.Security;
 
 namespace StellarStreamAPI.Database
 {
-    public class DatabaseContext : IMongoDatabaseContext
+    public class SecurityDatabaseContext : IMongoSecurityDatabaseContext
     {
-        private readonly ILogger<DatabaseContext> _logger;
+        private readonly ILogger<SecurityDatabaseContext> _logger;
         private readonly IMongoCollection<ApiKey> _apiKeyCollection;
         private readonly IMongoCollection<ApiKeyConsumer> _apiKeyConsumerCollection;
 
-        public DatabaseContext(IOptions<StellarStreamApiSecurityDBSettings> databaseSettings, ILogger<DatabaseContext> logger)
+        public SecurityDatabaseContext(IOptions<StellarStreamApiSecurityDBSettings> databaseSettings, ILogger<SecurityDatabaseContext> logger)
         {
             var mongoClient = new MongoClient(databaseSettings.Value.ConnectionString);
             var database = mongoClient.GetDatabase(databaseSettings.Value.DatabaseName);

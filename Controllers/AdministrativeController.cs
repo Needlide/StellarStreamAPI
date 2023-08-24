@@ -3,8 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Bson;
 using StellarStreamAPI.Interfaces;
-using StellarStreamAPI.POCOs;
 using StellarStreamAPI.POCOs.Models;
+using StellarStreamAPI.POCOs.Security;
 using StellarStreamAPI.Security.JWT;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
@@ -18,11 +18,11 @@ namespace StellarStreamAPI.Controllers
     [ApiController]
     public class AdministrativeController : ControllerBase
     {
-        private readonly IMongoDatabaseContext _dbContext;
+        private readonly IMongoSecurityDatabaseContext _dbContext;
         private readonly IEncryptor _symmetricEncryptor;
         private readonly ILogger<AdministrativeController> _logger;
 
-        public AdministrativeController(IMongoDatabaseContext dbContext, IEncryptor symmetricEncryptor, ILogger<AdministrativeController> logger)
+        public AdministrativeController(IMongoSecurityDatabaseContext dbContext, IEncryptor symmetricEncryptor, ILogger<AdministrativeController> logger)
         {
             _dbContext = dbContext;
             _symmetricEncryptor = symmetricEncryptor;

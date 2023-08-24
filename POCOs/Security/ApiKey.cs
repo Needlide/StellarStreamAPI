@@ -1,7 +1,7 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
-namespace StellarStreamAPI.POCOs
+namespace StellarStreamAPI.POCOs.Security
 {
     public enum ApiKeyStatus
     {
