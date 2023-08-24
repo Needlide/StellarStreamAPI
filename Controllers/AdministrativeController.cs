@@ -30,7 +30,7 @@ namespace StellarStreamAPI.Controllers
         }
 
         [AllowAnonymous]
-        [HttpPost("/user")]
+        [HttpPost("user")]
         public async Task<IActionResult> UserRegistration([FromBody]ApiKeyConsumerRegistrationModel model)
         {
             if (!ModelState.IsValid)
@@ -71,7 +71,7 @@ namespace StellarStreamAPI.Controllers
         }
 
         [AllowAnonymous]
-        [HttpPost("/user/login")]
+        [HttpPost("user/login")]
         public async Task<IActionResult> UserLogin([FromBody] ApiKeyConsumerRegistrationModel model)
         {
             if (!ModelState.IsValid)
@@ -99,7 +99,7 @@ namespace StellarStreamAPI.Controllers
             return Ok(new { message = "Login successful.", token = "Bearer " + JWT });
         }
 
-        [HttpPost("/user/apikey")]
+        [HttpPost("user/apikey")]
         public async Task<IActionResult> UserRegisterApiKey()
         {
             string userEmail = User.FindFirstValue(ClaimTypes.Email);
@@ -143,7 +143,7 @@ namespace StellarStreamAPI.Controllers
             return Ok(new { apikey = apiKey, message = "IMPORTANT: Save your API key immediately. You won't be able to retrieve it again." });
         }
 
-        [HttpGet("/user/apikeys")]
+        [HttpGet("user/apikeys")]
         public async Task<IActionResult> UserGetApiKeys()
         {
             string userEmail = User.FindFirstValue(ClaimTypes.Email);
@@ -174,7 +174,6 @@ namespace StellarStreamAPI.Controllers
                 creationDate = apiKey.CreationDate,
                 expirationDate = apiKey.ExpiryDate,
                 status = apiKey.Status.ToString(),
-                usageCount = apiKey.UsageCount,
                 requestsThisHour = apiKey.RequestsThisHour,
                 creationDateFriendly = apiKey.CreationDate.ToString(),
                 expirationDateFriendly = apiKey.ExpiryDate.ToString()
@@ -183,7 +182,7 @@ namespace StellarStreamAPI.Controllers
             return Ok(responseKeys);
         }
 
-        [HttpDelete("/user/apikey")]
+        [HttpDelete("user/apikey")]
         public async Task<IActionResult> UserRevokeApiKey([FromBody] ApiKeyRevokingModel model)
         {
             if (!ModelState.IsValid)

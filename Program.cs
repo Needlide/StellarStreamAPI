@@ -1,17 +1,18 @@
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MongoDB.Driver;
 using StellarStreamAPI.Database;
 using StellarStreamAPI.Interfaces;
+using StellarStreamAPI.Middleware;
 using StellarStreamAPI.POCOs.Models;
 using StellarStreamAPI.Security;
 using StellarStreamAPI.Security.JWT;
 using StellarStreamAPI.Security.Validators;
+using StellarStreamAPI.Services;
 using System.Net;
 using System.Text.Json;
 
@@ -20,10 +21,13 @@ var builder = WebApplication.CreateBuilder(args);
 string AllowedOriginsPolicyName = "AllowedSpecificOrigins";
 
 builder.Services.Configure<StellarStreamApiSecurityDBSettings>(builder.Configuration.GetSection("stellarstreamapisecuritydb"));
+builder.Services.Configure<AcuDbContentDBSettings>(builder.Configuration.GetSection("ACU_DB"));
 
-builder.Services.AddSingleton<IMongoClient>(new MongoClient(builder.Configuration.GetConnectionString("SecurityMongoDB")));
+builder.Services.AddSingleton<IMongoClient>(new MongoClient(builder.Configuration.GetConnectionString("Security")));
+builder.Services.AddSingleton<IMongoClient>(new MongoClient(builder.Configuration.GetConnectionString("Content")));
 
-builder.Services.AddScoped<IMongoSecurityDatabaseContext, SecurityDatabaseContext>();
+builder.Services.AddSingleton<IMongoSecurityDatabaseContext, SecurityDatabaseContext>();
+builder.Services.AddSingleton<IMongoContentDatabaseContext, ContentDatabaseContext>();
 builder.Services.AddTransient<IEncryptor, SymmetricEncryptor>();
 
 builder.Services.AddLogging();
@@ -90,6 +94,14 @@ builder.Services.AddSwaggerGen(c =>
         Description = "JWT Authorization header using the Bearer scheme."
     });
 
+    c.AddSecurityDefinition("BearerAuth", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme.",
+        Name = "X-API-KEY",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey
+    });
+
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -102,6 +114,21 @@ builder.Services.AddSwaggerGen(c =>
                   }
               },
               Array.Empty<string>()
+        }
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "BearerAuth"
+                }
+            },
+            Array.Empty<string>()
         }
     });
 });
@@ -118,6 +145,8 @@ builder.Services.AddApiVersioning(options =>
 builder.Logging.AddDebug();
 builder.Logging.SetMinimumLevel(LogLevel.Information);
 
+builder.Services.AddHostedService<ResetHourlyCountService>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -125,7 +154,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-        // Enable the "Authorize" button in Swagger UI
         c.EnableDeepLinking();
         c.DefaultModelsExpandDepth(-1);
     });
@@ -146,6 +174,8 @@ app.UseCors(AllowedOriginsPolicyName);
 app.UseAuthentication();
 
 app.UseAuthorization();
+
+app.UseMiddleware<ApiKeyMiddleware>();
 
 app.MapControllers();
 
