@@ -19,4 +19,8 @@ RUN dotnet publish "StellarStreamAPI.csproj" -c Release -o /app/publish /p:UseAp
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+
+COPY ["public_key.pem", "/app/"]
+COPY ["private_key.pem", "/app/"]
+
 ENTRYPOINT ["dotnet", "StellarStreamAPI.dll"]
