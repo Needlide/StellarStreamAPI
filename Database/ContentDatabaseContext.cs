@@ -1,33 +1,47 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 using StellarStreamAPI.Interfaces;
 using StellarStreamAPI.POCOs.Content;
-using StellarStreamAPI.POCOs.Models;
+using StellarStreamAPI.POCOs.Models.Content;
+using StellarStreamAPI.POCOs.Models.Security;
 
 namespace StellarStreamAPI.Database
 {
     public class ContentDatabaseContext : IMongoContentDatabaseContext
     {
-        private readonly IMongoQueryable<NewsThumbnails> News;
-        private readonly IMongoQueryable<NasaImages> NasaImages;
-        private readonly IMongoQueryable<MarsPhotos> MarsPhotos;
-        private readonly IMongoQueryable<Apod> Apods;
+        private readonly IMongoCollection<NewsThumbnails> News;
+        private readonly IMongoCollection<NasaImages> NasaImages;
+        private readonly IMongoCollection<MarsPhotos> MarsPhotos;
+        private readonly IMongoCollection<Apod> Apods;
 
         public ContentDatabaseContext(IMongoClient mongoClient, IOptions<AcuDbContentDBSettings> databaseSettings)
         {
             var database = mongoClient.GetDatabase(databaseSettings.Value.DatabaseName);
-            News = database.GetCollection<NewsThumbnails>(databaseSettings.Value.NewsCollectionName).AsQueryable();
-            NasaImages = database.GetCollection<NasaImages>(databaseSettings.Value.NASAGalleryCollectionName).AsQueryable();
-            MarsPhotos = database.GetCollection<MarsPhotos>(databaseSettings.Value.MarsPhotosCollectionName).AsQueryable();
-            Apods = database.GetCollection<Apod>(databaseSettings.Value.PictureOfTheDayCollectionName).AsQueryable();
+            News = database.GetCollection<NewsThumbnails>(databaseSettings.Value.NewsCollectionName);
+            NasaImages = database.GetCollection<NasaImages>(databaseSettings.Value.NASAGalleryCollectionName);
+            MarsPhotos = database.GetCollection<MarsPhotos>(databaseSettings.Value.MarsPhotosCollectionName);
+            Apods = database.GetCollection<Apod>(databaseSettings.Value.PictureOfTheDayCollectionName);
         }
 
-        public async Task<Result<List<NewsThumbnails>>> GetNews(int count, int offset, string? title, string? newsSite, DateTime? startDateP, DateTime? endDateP, DateTime? startDateU, DateTime? endDateU)
+        public async Task<Result<List<NewsThumbnailsUserFriendlyModel>>> GetNews(int count, int offset, string? title, string? newsSite, DateTime? startDateP, DateTime? endDateP, DateTime? startDateU, DateTime? endDateU)
         {
             try
             {
-                var query = News;
+                var projection = await News.Find(_ => true).Project(n => new NewsThumbnailsUserFriendlyModel
+                {
+                    Id = n.Id,
+                    Title = n.Title,
+                    Url = n.Url,
+                    ImageUrl = n.ImageUrl,
+                    NewsSite = n.NewsSite,
+                    Summary = n.Summary,
+                    PublishedAt = n.PublishedAt,
+                    UpdatedAt = n.UpdatedAt
+                }).ToListAsync();
+
+                var query = projection.AsQueryable();
 
                 if (!string.IsNullOrEmpty(title))
                 {
@@ -77,19 +91,36 @@ namespace StellarStreamAPI.Database
                     query = query.Where(x => x.UpdatedAt == startDateU);
                 }
 
-                var result = await query.Skip(offset).Take(count).ToListAsync();//negative offset considered as zero
+                count = count < 0 ? 10 : count;
 
-                return Result<List<NewsThumbnails>>.Success(result);
+                var result = query.Skip(offset).Take(count).ToList();//negative offset considered as zero
+
+                return Result<List<NewsThumbnailsUserFriendlyModel>>.Success(result);
             }
-            catch (MongoException ex) { return Result<List<NewsThumbnails>>.Fail(ex); }
-            catch (Exception ex) { return Result<List<NewsThumbnails>>.Fail(ex); }
+            catch (MongoException ex) { return Result<List<NewsThumbnailsUserFriendlyModel>>.Fail(ex); }
+            catch (Exception ex) { return Result<List<NewsThumbnailsUserFriendlyModel>>.Fail(ex); }
         }
 
-        public async Task<Result<List<NasaImages>>> GetNasaImages(int count, int offset, string? title, string? center, string? nasaId, string? mediaType, string[]? keywords, DateTime? startDate, DateTime? endDate, string? secondaryDescription, string? secondaryCreator, string? description)
+        public async Task<Result<List<NasaImagesUserFriendlyModel>>> GetNasaImages(int count, int offset, string? title, string? center, string? nasaId, string? mediaType, [FromQuery]string[]? keywords, DateTime? startDate, DateTime? endDate, string? secondaryDescription, string? secondaryCreator, string? description)
         {
             try
             {
-                var query = NasaImages;
+                var projection = await NasaImages.Find(_ => true).Project(n => new NasaImagesUserFriendlyModel
+                {
+                    Id = n.Id,
+                    NASAId = n.NASAId,
+                    Center = n.Center,
+                    DateCreated = n.DateCreated,
+                    Description = n.Description,
+                    Href = n.Href,
+                    Keywords = n.Keywords,
+                    MediaType = n.MediaType,
+                    SecondaryCreator = n.SecondaryCreator,
+                    SecondaryDescription = n.SecondaryDescription,
+                    Title = n.Title
+                }).ToListAsync();
+
+                var query = projection.AsQueryable();
 
                 if(!string.IsNullOrEmpty(title))
                 {
@@ -143,19 +174,29 @@ namespace StellarStreamAPI.Database
                     query = query.Where(x => x.DateCreated == startDate);
                 }
 
-                var result = await query.Skip(offset).Take(count).ToListAsync();
-                return Result<List<NasaImages>>.Success(result);
+                var result = query.Skip(offset).Take(count).ToList();
+                return Result<List<NasaImagesUserFriendlyModel>>.Success(result);
             }
-            catch (InvalidCastException ex) { return Result<List<NasaImages>>.Fail(ex); } 
-            catch (MongoException ex) { return Result<List<NasaImages>>.Fail(ex); }
-            catch (Exception ex) { return Result<List<NasaImages>>.Fail(ex); }
+            catch (InvalidCastException ex) { return Result<List<NasaImagesUserFriendlyModel>>.Fail(ex); } 
+            catch (MongoException ex) { return Result<List<NasaImagesUserFriendlyModel>>.Fail(ex); }
+            catch (Exception ex) { return Result<List<NasaImagesUserFriendlyModel>>.Fail(ex); }
         }
 
-        public async Task<Result<List<MarsPhotos>>> GetMarsPhotos(int count, int offset, int? startSol, int? endSol, string? cameraName, DateTime? startDate, DateTime? endDate, string? roverName)
+        public async Task<Result<List<MarsPhotosUserFriendlyModel>>> GetMarsPhotos(int count, int offset, int? startSol, int? endSol, string? cameraName, DateTime? startDate, DateTime? endDate, string? roverName)
         {
             try
             {
-                var query = MarsPhotos;
+                var projection = await MarsPhotos.Find(_ => true).Project(n => new MarsPhotosUserFriendlyModel
+                {
+                    Camera = n.Camera,
+                    EarthDate = n.EarthDate,
+                    Id = n.Id,
+                    ImgSrc = n.ImgSrc,
+                    Rover = n.Rover,
+                    Sol = n.Sol
+                }).ToListAsync();
+
+                var query = projection.AsQueryable();
 
                 if (startSol.HasValue && endSol.HasValue)
                 {
@@ -206,21 +247,34 @@ namespace StellarStreamAPI.Database
                     query = query.Where(x => Newtonsoft.Json.JsonConvert.DeserializeObject<MarsPhotosRoverModel>((string)x.Rover).name.Contains(roverName));
                 }
 
-                var result = await query.Skip(offset).Take(count).ToListAsync();
-                return Result<List<MarsPhotos>>.Success(result);
+                var result = query.Skip(offset).Take(count).ToList();
+                return Result<List<MarsPhotosUserFriendlyModel>>.Success(result);
             }
-            catch (FormatException ex) { return Result<List<MarsPhotos>>.Fail(ex); }
-            catch (ArgumentException ex) { return Result<List<MarsPhotos>>.Fail(ex); }
-            catch (OverflowException ex) { return Result<List<MarsPhotos>>.Fail(ex); }
-            catch (MongoException ex) { return Result<List<MarsPhotos>>.Fail(ex); }
-            catch (Exception ex) { return Result<List<MarsPhotos>>.Fail(ex); }
+            catch (FormatException ex) { return Result<List<MarsPhotosUserFriendlyModel>>.Fail(ex); }
+            catch (ArgumentException ex) { return Result<List<MarsPhotosUserFriendlyModel>>.Fail(ex); }
+            catch (OverflowException ex) { return Result<List<MarsPhotosUserFriendlyModel>>.Fail(ex); }
+            catch (MongoException ex) { return Result<List<MarsPhotosUserFriendlyModel>>.Fail(ex); }
+            catch (Exception ex) { return Result<List<MarsPhotosUserFriendlyModel>>.Fail(ex); }
         }
 
-        public async Task<Result<List<Apod>>> GetApods(int count, int offset, string? title, string? explanation, DateTime? startDate, DateTime? endDate, string? copyright, string? mediaType)
+        public async Task<Result<List<ApodUserFriendlyModel>>> GetApods(int count, int offset, string? title, string? explanation, DateTime? startDate, DateTime? endDate, string? copyright, string? mediaType)
         {
             try
             {
-                var query = Apods;
+                var projection = await Apods.Find(_ => true).Project(n => new ApodUserFriendlyModel
+                {
+                    Copyright = n.Copyright,
+                    Date = n.Date,
+                    Explanation = n.Explanation,
+                    HdUrl = n.HdUrl,
+                    Id = n.Id,
+                    MediaType = n.MediaType,
+                    ServiceVersion = n.ServiceVersion,
+                    Title = n.Title,
+                    Url = n.Url
+                }).ToListAsync();
+
+                var query = projection.AsQueryable();
 
                 if(!string.IsNullOrEmpty(title))
                 {
@@ -259,31 +313,31 @@ namespace StellarStreamAPI.Database
                     query = query.Where(x => DateTime.Parse(x.Date) == startDate);
                 }
 
-                var result = await query.Skip(offset).Take(count).ToListAsync();
-                return Result<List<Apod>>.Success(result);
+                var result = query.Skip(offset).Take(count).ToList();
+                return Result<List<ApodUserFriendlyModel>>.Success(result);
             }
-            catch (MongoException ex) { return Result<List<Apod>>.Fail(ex); }
-            catch (Exception ex) { return Result<List<Apod>>.Fail(ex); }
+            catch (MongoException ex) { return Result<List<ApodUserFriendlyModel>>.Fail(ex); }
+            catch (Exception ex) { return Result<List<ApodUserFriendlyModel>>.Fail(ex); }
         }
 
         public async Task<Result<long>> GetNewsCount()
         {
-            return Result<long>.Success(await News.LongCountAsync());
+            return Result<long>.Success(await News.CountDocumentsAsync(_ => true));
         }
 
         public async Task<Result<long>> GetNasaImagesCount()
         {
-            return Result<long>.Success(await NasaImages.LongCountAsync());
+            return Result<long>.Success(await NasaImages.CountDocumentsAsync(_ => true));
         }
 
         public async Task<Result<long>> GetMarsPhotosCount()
         {
-            return Result<long>.Success(await MarsPhotos.LongCountAsync());
+            return Result<long>.Success(await MarsPhotos.CountDocumentsAsync(_ => true));
         }
 
         public async Task<Result<long>> GetApodsCount()
         {
-            return Result<long>.Success(await Apods.LongCountAsync());
+            return Result<long>.Success(await Apods.CountDocumentsAsync(_ => true));
         }
     }
 }

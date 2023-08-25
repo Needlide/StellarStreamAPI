@@ -74,7 +74,7 @@ namespace StellarStreamAPI.Controllers
         {
             var result = await _dbContext.GetNews(count, offset, title, newsSite, startDateP, endDateP, startDateU, endDateU);
 
-            if(!result.IsSuccess)
+            if (!result.IsSuccess)
             {
                 return Problem("Error occured while retrieving data.", statusCode: (int)HttpStatusCode.InternalServerError);
             }

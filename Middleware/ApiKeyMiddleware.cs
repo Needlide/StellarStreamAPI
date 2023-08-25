@@ -44,8 +44,12 @@ namespace StellarStreamAPI.Middleware
                     await context.Response.WriteAsJsonAsync(new { error = "API key has expired." });
 
                     await _dbContext.DeleteApiKeyAsync(storedKey.KeyId);
-
                     return;
+                }
+
+                if (storedKey.NeedsToReset)
+                {
+                    storedKey.RequestsThisHour = 0;
                 }
 
                 var now = DateTime.UtcNow;
@@ -53,18 +57,19 @@ namespace StellarStreamAPI.Middleware
 
                 if (storedKey.RequestsThisHour > 59)
                 {
-                    var waitTime = (nextAllowedUse - now).TotalSeconds;
+                    var waitTime = Math.Floor((nextAllowedUse - now).TotalSeconds);
 
                     context.Response.Headers.Add("Retry-After", waitTime.ToString());
 
                     context.Response.StatusCode = 429;
                     await context.Response.WriteAsJsonAsync(new { error = $"Reached the limit of usage per hour. Try again in {waitTime} seconds.", limit = 60 });
+                    return;
                 }
 
                 storedKey.RequestsThisHour++;
                 storedKey.LastUsed = now;
 
-                _dbContext.UpdateApiKey(apiKey, storedKey);
+                _dbContext.UpdateApiKey(storedKey);
             }
             await _next(context);
         }

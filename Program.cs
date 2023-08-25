@@ -8,12 +8,12 @@ using MongoDB.Driver;
 using StellarStreamAPI.Database;
 using StellarStreamAPI.Interfaces;
 using StellarStreamAPI.Middleware;
-using StellarStreamAPI.POCOs.Models;
+using StellarStreamAPI.POCOs.Models.Security;
 using StellarStreamAPI.Security;
 using StellarStreamAPI.Security.JWT;
 using StellarStreamAPI.Security.Validators;
-using StellarStreamAPI.Services;
 using System.Net;
+using System.Reflection;
 using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -144,8 +144,6 @@ builder.Services.AddApiVersioning(options =>
 
 builder.Logging.AddDebug();
 builder.Logging.SetMinimumLevel(LogLevel.Information);
-
-builder.Services.AddHostedService<ResetHourlyCountService>();
 
 var app = builder.Build();
 

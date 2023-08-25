@@ -1,4 +1,4 @@
-﻿namespace StellarStreamAPI.POCOs.Models
+﻿namespace StellarStreamAPI.POCOs.Models.Security
 {
     public class AcuDbContentDBSettings
     {

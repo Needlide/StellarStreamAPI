@@ -1,5 +1,5 @@
 ﻿using FluentValidation;
-using StellarStreamAPI.POCOs.Models;
+using StellarStreamAPI.POCOs.Models.Security;
 
 namespace StellarStreamAPI.Security.Validators
 {

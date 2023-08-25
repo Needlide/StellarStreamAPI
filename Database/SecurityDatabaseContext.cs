@@ -2,7 +2,7 @@
 using MongoDB.Bson;
 using MongoDB.Driver;
 using StellarStreamAPI.Interfaces;
-using StellarStreamAPI.POCOs.Models;
+using StellarStreamAPI.POCOs.Models.Security;
 using StellarStreamAPI.POCOs.Security;
 
 namespace StellarStreamAPI.Database
@@ -155,11 +155,11 @@ namespace StellarStreamAPI.Database
             catch (Exception ex) { return Result<bool>.Fail(ex); }
         }
 
-        public Result<bool> UpdateApiKey(string filter, ApiKey replacement)
+        public Result<bool> UpdateApiKey(ApiKey replacement)
         {
             try
             {
-                return Result<bool>.Success(ApiKeys.ReplaceOne(k => k.KeyValue == filter, replacement).IsAcknowledged);
+                return Result<bool>.Success(ApiKeys.ReplaceOne(k => k.KeyId == replacement.KeyId, replacement).IsAcknowledged);
             }
             catch (MongoException ex) { return Result<bool>.Fail(ex); }
             catch (Exception ex) { return Result<bool>.Fail(ex); }

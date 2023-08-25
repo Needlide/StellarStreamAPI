@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Bson;
 using StellarStreamAPI.Interfaces;
-using StellarStreamAPI.POCOs.Models;
+using StellarStreamAPI.POCOs.Models.Security;
 using StellarStreamAPI.POCOs.Security;
 using StellarStreamAPI.Security.JWT;
 using System.IdentityModel.Tokens.Jwt;
@@ -173,10 +173,11 @@ namespace StellarStreamAPI.Controllers
                 keyId = apiKey.KeyId.ToString(),
                 creationDate = apiKey.CreationDate,
                 expirationDate = apiKey.ExpiryDate,
-                status = apiKey.Status.ToString(),
                 requestsThisHour = apiKey.RequestsThisHour,
                 creationDateFriendly = apiKey.CreationDate.ToString(),
-                expirationDateFriendly = apiKey.ExpiryDate.ToString()
+                expirationDateFriendly = apiKey.ExpiryDate.ToString(),
+                lastUsed = apiKey.LastUsed,
+                lastUsedFriendly = apiKey.LastUsed.ToString()
             }).ToList();
 
             return Ok(responseKeys);
