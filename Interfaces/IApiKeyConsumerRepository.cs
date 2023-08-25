@@ -1,4 +1,4 @@
-﻿using StellarStreamAPI.Security.POCOs;
+﻿using StellarStreamAPI.POCOs.Security;
 
 namespace StellarStreamAPI.Interfaces
 {

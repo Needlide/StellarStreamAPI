@@ -1,11 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
-using StellarStreamAPI.Database;
-using StellarStreamAPI.Security;
+using MongoDB.Bson;
+using StellarStreamAPI.Interfaces;
+using StellarStreamAPI.POCOs.Models.Security;
+using StellarStreamAPI.POCOs.Security;
 using StellarStreamAPI.Security.JWT;
-using StellarStreamAPI.Security.POCOs;
-using StellarStreamAPI.Security.POCOs.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Security.Claims;
@@ -18,18 +18,19 @@ namespace StellarStreamAPI.Controllers
     [ApiController]
     public class AdministrativeController : ControllerBase
     {
-        private readonly DatabaseContext _dbContext;
-        private readonly SymmetricEncryptor _symmetricEncryptor;
-        private readonly ILogger _logger;
+        private readonly IMongoSecurityDatabaseContext _dbContext;
+        private readonly IEncryptor _symmetricEncryptor;
+        private readonly ILogger<AdministrativeController> _logger;
 
-        public AdministrativeController(DatabaseContext dbContext, SymmetricEncryptor symmetricEncryptor, ILogger logger)
+        public AdministrativeController(IMongoSecurityDatabaseContext dbContext, IEncryptor symmetricEncryptor, ILogger<AdministrativeController> logger)
         {
             _dbContext = dbContext;
             _symmetricEncryptor = symmetricEncryptor;
             _logger = logger;
         }
 
-        [HttpPost("/user")]
+        [AllowAnonymous]
+        [HttpPost("user")]
         public async Task<IActionResult> UserRegistration([FromBody]ApiKeyConsumerRegistrationModel model)
         {
             if (!ModelState.IsValid)
@@ -51,7 +52,12 @@ namespace StellarStreamAPI.Controllers
                 return Conflict(new { message = "Email already registered." });
             }
 
-            ApiKeyConsumer consumer = new() { Email = model.Email, Password = encryptedPass };
+            ApiKeyConsumer consumer = new()
+            {
+                UserId = BitConverter.ToInt64(Guid.NewGuid().ToByteArray(), 0),
+                Email = model.Email,
+                Password = encryptedPass
+            };
             Result<bool> saveResult = await _dbContext.SaveApiKeyConsumerAsync(consumer);
 
             if (!saveResult.IsSuccess)
@@ -61,10 +67,11 @@ namespace StellarStreamAPI.Controllers
 
             string JWT = GenerateJWT(model.Email);
 
-            return Ok(new { message = "Registered successfully.", token = JWT });
+            return Ok(new { message = "Registered successfully.", token = "Bearer " + JWT });
         }
 
-        [HttpPost("/user/login")]
+        [AllowAnonymous]
+        [HttpPost("user/login")]
         public async Task<IActionResult> UserLogin([FromBody] ApiKeyConsumerRegistrationModel model)
         {
             if (!ModelState.IsValid)
@@ -89,10 +96,10 @@ namespace StellarStreamAPI.Controllers
             {
                 return StatusCode((int)HttpStatusCode.InternalServerError);
             }
-            return Ok(new { token = JWT });
+            return Ok(new { message = "Login successful.", token = "Bearer " + JWT });
         }
 
-        [HttpPost("/user/apikey")]
+        [HttpPost("user/apikey")]
         public async Task<IActionResult> UserRegisterApiKey()
         {
             string userEmail = User.FindFirstValue(ClaimTypes.Email);
@@ -136,7 +143,7 @@ namespace StellarStreamAPI.Controllers
             return Ok(new { apikey = apiKey, message = "IMPORTANT: Save your API key immediately. You won't be able to retrieve it again." });
         }
 
-        [HttpGet("/user/apikeys")]
+        [HttpGet("user/apikeys")]
         public async Task<IActionResult> UserGetApiKeys()
         {
             string userEmail = User.FindFirstValue(ClaimTypes.Email);
@@ -163,18 +170,20 @@ namespace StellarStreamAPI.Controllers
 
             var responseKeys = userApiKeys.Select(apiKey => new
             {
-                keyId = apiKey.KeyId,
+                keyId = apiKey.KeyId.ToString(),
                 creationDate = apiKey.CreationDate,
                 expirationDate = apiKey.ExpiryDate,
-                status = apiKey.Status,
-                usageCount = apiKey.UsageCount,
-                requestsThisHour = apiKey.RequestsThisHour
+                requestsThisHour = apiKey.RequestsThisHour,
+                creationDateFriendly = apiKey.CreationDate.ToString(),
+                expirationDateFriendly = apiKey.ExpiryDate.ToString(),
+                lastUsed = apiKey.LastUsed,
+                lastUsedFriendly = apiKey.LastUsed.ToString()
             }).ToList();
 
             return Ok(responseKeys);
         }
 
-        [HttpDelete("/user/apikey")]
+        [HttpDelete("user/apikey")]
         public async Task<IActionResult> UserRevokeApiKey([FromBody] ApiKeyRevokingModel model)
         {
             if (!ModelState.IsValid)
@@ -195,7 +204,12 @@ namespace StellarStreamAPI.Controllers
                 return BadRequest(new { message = "Invalid credentials." });
             }
 
-            Result<bool> apiKeyExistsResult = await _dbContext.ApiKeyExistsAsync(model.KeyId);
+            if(!ObjectId.TryParse(model.KeyId, out var Id))
+            {
+                return BadRequest(new { message = "Invalid API key ID." });
+            }
+
+            Result<bool> apiKeyExistsResult = await _dbContext.ApiKeyExistsAsync(Id);
 
             if (!apiKeyExistsResult.IsSuccess)
             {
@@ -207,7 +221,7 @@ namespace StellarStreamAPI.Controllers
                 return BadRequest(new { message = "API key with given ID does not exist." });
             }
 
-            Result<bool> keyRevokeResult = await _dbContext.DeleteApiKeyAsync(model.KeyId);
+            Result<bool> keyRevokeResult = await _dbContext.DeleteApiKeyAsync(Id);
 
             if (!keyRevokeResult.IsSuccess)
             {
@@ -236,7 +250,9 @@ namespace StellarStreamAPI.Controllers
                     new Claim(ClaimTypes.Email, email)
                     }),
                     Expires = DateTime.UtcNow.AddHours(1),
-                    SigningCredentials = new SigningCredentials(new RsaSecurityKey(JWTKeyReader.ReadPrivateKey("private_key.pem")), SecurityAlgorithms.RsaSha256)
+                    SigningCredentials = new SigningCredentials(new RsaSecurityKey(JWTKeyReader.ReadPrivateKey("private_key.pem")), SecurityAlgorithms.RsaSha256),
+                    Audience = "Users",
+                    Issuer = "StellarStreamAPI"
                 };
 
                 var tokenHandler = new JwtSecurityTokenHandler();

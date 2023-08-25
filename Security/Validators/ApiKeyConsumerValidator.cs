@@ -1,9 +1,9 @@
 ﻿using FluentValidation;
-using StellarStreamAPI.Security.POCOs;
+using StellarStreamAPI.POCOs.Models.Security;
 
 namespace StellarStreamAPI.Security.Validators
 {
-    public class ApiKeyConsumerValidator : AbstractValidator<ApiKeyConsumer>
+    public class ApiKeyConsumerValidator : AbstractValidator<ApiKeyConsumerRegistrationModel>
     {
         public ApiKeyConsumerValidator()
         {

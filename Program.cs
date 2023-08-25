@@ -3,35 +3,42 @@ using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using MongoDB.Driver;
 using StellarStreamAPI.Database;
 using StellarStreamAPI.Interfaces;
+using StellarStreamAPI.Middleware;
+using StellarStreamAPI.POCOs.Models.Security;
 using StellarStreamAPI.Security;
 using StellarStreamAPI.Security.JWT;
 using StellarStreamAPI.Security.Validators;
 using System.Net;
-using System.Security.Cryptography;
+using System.Reflection;
 using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
 string AllowedOriginsPolicyName = "AllowedSpecificOrigins";
-string AppConfigConnectionString = builder.Configuration.GetConnectionString("AppConfig");
 
-builder.Services.AddSingleton<IMongoDatabaseContext, DatabaseContext>();
-builder.Services.AddTransient(typeof(SymmetricEncryptor));
+builder.Services.Configure<StellarStreamApiSecurityDBSettings>(builder.Configuration.GetSection("stellarstreamapisecuritydb"));
+builder.Services.Configure<AcuDbContentDBSettings>(builder.Configuration.GetSection("ACU_DB"));
+
+builder.Services.AddSingleton<IMongoClient>(new MongoClient(builder.Configuration.GetConnectionString("Security")));
+builder.Services.AddSingleton<IMongoClient>(new MongoClient(builder.Configuration.GetConnectionString("Content")));
+
+builder.Services.AddSingleton<IMongoSecurityDatabaseContext, SecurityDatabaseContext>();
+builder.Services.AddSingleton<IMongoContentDatabaseContext, ContentDatabaseContext>();
+builder.Services.AddTransient<IEncryptor, SymmetricEncryptor>();
+
+builder.Services.AddLogging();
+
+builder.Services.AddControllers();
 
 builder.Configuration.AddUserSecrets<Program>();
-Aes aes = Aes.Create();
-builder.Configuration.GetSection("Security")["EncoderKey"] = aes.Key.ToString();
-
-builder.Configuration.AddAzureAppConfiguration(AppConfigConnectionString);
-builder.Services.Configure<AppConfig>(builder.Configuration.GetSection("StellarStreamAppConfig"));
-var appConfig = new AppConfig();
-builder.Configuration.GetSection("StellarStreamAppConfig").Bind(appConfig);
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy(name: AllowedOriginsPolicyName, policy => { policy.WithOrigins(appConfig.Cors.AllowedOrigins.ToArray()).AllowCredentials().AllowAnyHeader(); });
+    options.AddPolicy("CorsDebugPolicy", policy => { policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod(); });
 });
 
 builder.Services.AddAuthentication(options =>
@@ -48,7 +55,7 @@ builder.Services.AddAuthentication(options =>
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
         ValidIssuer = "StellarStreamAPI",
-        ValidAudience = "AstroNews",
+        ValidAudience = "Users",
         IssuerSigningKey = new RsaSecurityKey(JWTKeyReader.ReadPublicKey("public_key.pem"))
     };
     options.Events = new JwtBearerEvents
@@ -64,14 +71,68 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AuthorizationDebugPolicy", policy => { policy.RequireAuthenticatedUser(); });
+});
+
 builder.Services.AddFluentValidationAutoValidation().AddFluentValidationClientsideAdapters();
-builder.Services.AddValidatorsFromAssemblyContaining<ApiKeyValidator>();
 builder.Services.AddValidatorsFromAssemblyContaining<ApiKeyConsumerValidator>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "JWT Authorization header using the Bearer scheme."
+    });
+
+    c.AddSecurityDefinition("BearerAuth", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme.",
+        Name = "X-API-KEY",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+              new OpenApiSecurityScheme
+              {
+                  Reference = new OpenApiReference
+                  {
+                      Type = ReferenceType.SecurityScheme,
+                      Id = "Bearer"
+                  }
+              },
+              Array.Empty<string>()
+        }
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "BearerAuth"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
 builder.Services.AddApiVersioning(options =>
 {
     options.RegisterMiddleware = true;
@@ -89,7 +150,11 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.EnableDeepLinking();
+        c.DefaultModelsExpandDepth(-1);
+    });
     app.UseDeveloperExceptionPage();
 }
 else
@@ -107,6 +172,8 @@ app.UseCors(AllowedOriginsPolicyName);
 app.UseAuthentication();
 
 app.UseAuthorization();
+
+app.UseMiddleware<ApiKeyMiddleware>();
 
 app.MapControllers();
 

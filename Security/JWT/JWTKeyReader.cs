@@ -7,12 +7,23 @@ namespace StellarStreamAPI.Security.JWT
 {
     public static class JWTKeyReader
     {
-        public static RSA ReadPrivateKey(string privateKeyPath)
+        public static RSA ReadPrivateKey(string pemFilePath)
         {
-            using var reader = File.OpenText(privateKeyPath);
+            using var reader = File.OpenText(pemFilePath);
             var pemReader = new PemReader(reader);
-            var keyPair = (AsymmetricCipherKeyPair)pemReader.ReadObject();
-            var privateParams = (RsaPrivateCrtKeyParameters)keyPair.Private;
+            var obj = pemReader.ReadObject();
+
+            RsaPrivateCrtKeyParameters privateParams;
+
+            if (obj is AsymmetricCipherKeyPair keyPair)
+            {
+                privateParams = (RsaPrivateCrtKeyParameters)keyPair.Private;
+            }
+            else
+            {
+                privateParams = (RsaPrivateCrtKeyParameters)obj;
+            }
+
             var rsa = RSA.Create();
             rsa.ImportParameters(new RSAParameters
             {
@@ -35,6 +46,7 @@ namespace StellarStreamAPI.Security.JWT
             var obj = pemReader.ReadObject();
             var publicParams = (RsaKeyParameters)obj;
             var rsa = RSA.Create();
+
             rsa.ImportParameters(new RSAParameters
             {
                 Modulus = publicParams.Modulus.ToByteArrayUnsigned(),

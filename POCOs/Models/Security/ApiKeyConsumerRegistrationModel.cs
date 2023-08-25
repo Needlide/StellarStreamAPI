@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace StellarStreamAPI.Security.POCOs.Models
+namespace StellarStreamAPI.POCOs.Models.Security
 {
     public class ApiKeyConsumerRegistrationModel
     {
