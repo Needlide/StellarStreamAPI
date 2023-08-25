@@ -18,6 +18,6 @@ API uses user secrets (secrets.json) to configure encryption and MongoClient.
 * Kestrel:Certificates:Development:Password
 * ConnectionStrings:Security
 * ConnectionStrings:Content
-(two different DBs for different purposes). Be aware that for Docker you need to use another connection string than for local development (in Docker: mongodb://host.docker.internal:27017/). API uses private_key.pem and public_key.pem for RSA encryption. These files not included in the repository.
+Be aware that for Docker you need to use another connection string than for local development (in Docker: mongodb://host.docker.internal:27017/). API uses private_key.pem and public_key.pem for RSA encryption. These files not included in the repository.
 ### Usage
 Usage default for Web APIs with Swagger. Register/login, include JWT token in Authorize section (first field) of SwaggerUI, register API key, save API key (you see it once), include API key in Authorize section (second field) of SwaggerUI, make requests. Limit per hour: 60 requests. Can be changed in middleware.
