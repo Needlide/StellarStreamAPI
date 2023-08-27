@@ -1,10 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace StellarStreamAPI.Security.POCOs.Models
+namespace StellarStreamAPI.POCOs.Models.Security
 {
     public class ApiKeyRevokingModel
     {
         [Required(ErrorMessage = "API key ID is required.")]
-        public long KeyId { get; set; }
+        public string KeyId { get; set; }
     }
 }
