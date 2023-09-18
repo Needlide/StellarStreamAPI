@@ -2,9 +2,8 @@
 
 namespace StellarStreamAPI.POCOs.Content
 {
-    public class Apod : DbEntityBase
+    public class Apod : EntityBase
     {
-        public int Id { get; set; }
         public string Copyright { get; set; }
         public string Date { get; set; }
         public string Explanation { get; set; }

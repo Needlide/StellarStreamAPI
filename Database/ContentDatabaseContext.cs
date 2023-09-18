@@ -30,7 +30,6 @@ namespace StellarStreamAPI.Database
             {
                 var projection = await News.Find(_ => true).Project(n => new NewsThumbnails
                 {
-                    Id = n.Id,
                     Title = n.Title,
                     Url = n.Url,
                     ImageUrl = n.ImageUrl,
@@ -106,7 +105,6 @@ namespace StellarStreamAPI.Database
             {
                 var projection = await NasaImages.Find(_ => true).Project(n => new NasaImages
                 {
-                    Id = n.Id,
                     NASAId = n.NASAId,
                     Center = n.Center,
                     DateCreated = n.DateCreated,
@@ -189,11 +187,10 @@ namespace StellarStreamAPI.Database
                 {
                     Camera = n.Camera,
                     EarthDate = n.EarthDate,
-                    Id = n.Id,
                     ImgSrc = n.ImgSrc,
                     Rover = n.Rover,
                     Sol = n.Sol
-                }).ToListAsync();
+                }).ToListAsync();//projection contains objects with null values
 
                 var query = projection.AsQueryable();
 
@@ -266,7 +263,6 @@ namespace StellarStreamAPI.Database
                     Date = n.Date,
                     Explanation = n.Explanation,
                     HdUrl = n.HdUrl,
-                    Id = n.Id,
                     MediaType = n.MediaType,
                     ServiceVersion = n.ServiceVersion,
                     Title = n.Title,

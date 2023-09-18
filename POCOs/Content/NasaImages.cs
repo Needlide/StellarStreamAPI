@@ -3,9 +3,8 @@ using StellarStreamAPI.Abstraction;
 
 namespace StellarStreamAPI.POCOs.Content
 {
-    public class NasaImages : DbEntityBase
+    public class NasaImages : EntityBase
     {
-        public int Id { get; set; }
         public string Center { get; set; }
         public string Title { get; set; }
         public string NASAId { get; set; }
