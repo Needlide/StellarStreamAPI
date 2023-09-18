@@ -1,12 +1,10 @@
-﻿using MongoDB.Bson.Serialization.Attributes;
-using MongoDB.Bson;
+﻿using MongoDB.Bson;
+using StellarStreamAPI.Abstraction;
 
 namespace StellarStreamAPI.POCOs.Content
 {
-    public class NasaImages
+    public class NasaImages : DbEntityBase
     {
-        [BsonId]
-        public ObjectId _id { get; set; }
         public int Id { get; set; }
         public string Center { get; set; }
         public string Title { get; set; }

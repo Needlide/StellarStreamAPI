@@ -1,12 +1,9 @@
-﻿using MongoDB.Bson.Serialization.Attributes;
-using MongoDB.Bson;
+﻿using StellarStreamAPI.Abstraction;
 
 namespace StellarStreamAPI.POCOs.Content
 {
-    public class Apod
+    public class Apod : DbEntityBase
     {
-        [BsonId]
-        public ObjectId _id { get; set; }
         public int Id { get; set; }
         public string Copyright { get; set; }
         public string Date { get; set; }

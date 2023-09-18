@@ -4,7 +4,6 @@ using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 using StellarStreamAPI.Interfaces;
 using StellarStreamAPI.POCOs.Content;
-using StellarStreamAPI.POCOs.Models.Content;
 using StellarStreamAPI.POCOs.Models.Security;
 
 namespace StellarStreamAPI.Database
@@ -25,11 +24,11 @@ namespace StellarStreamAPI.Database
             Apods = database.GetCollection<Apod>(databaseSettings.Value.PictureOfTheDayCollectionName);
         }
 
-        public async Task<Result<List<NewsThumbnailsUserFriendlyModel>>> GetNews(int count, int offset, string? title, string? newsSite, DateTime? startDateP, DateTime? endDateP, DateTime? startDateU, DateTime? endDateU)
+        public async Task<Result<List<NewsThumbnails>>> GetNews(int count, int offset, string? title, string? newsSite, DateTime? startDateP, DateTime? endDateP, DateTime? startDateU, DateTime? endDateU)
         {
             try
             {
-                var projection = await News.Find(_ => true).Project(n => new NewsThumbnailsUserFriendlyModel
+                var projection = await News.Find(_ => true).Project(n => new NewsThumbnails
                 {
                     Id = n.Id,
                     Title = n.Title,
@@ -95,17 +94,17 @@ namespace StellarStreamAPI.Database
 
                 var result = query.Skip(offset).Take(count).ToList();//negative offset considered as zero
 
-                return Result<List<NewsThumbnailsUserFriendlyModel>>.Success(result);
+                return Result<List<NewsThumbnails>>.Success(result);
             }
-            catch (MongoException ex) { return Result<List<NewsThumbnailsUserFriendlyModel>>.Fail(ex); }
-            catch (Exception ex) { return Result<List<NewsThumbnailsUserFriendlyModel>>.Fail(ex); }
+            catch (MongoException ex) { return Result<List<NewsThumbnails>>.Fail(ex); }
+            catch (Exception ex) { return Result<List<NewsThumbnails>>.Fail(ex); }
         }
 
-        public async Task<Result<List<NasaImagesUserFriendlyModel>>> GetNasaImages(int count, int offset, string? title, string? center, string? nasaId, string? mediaType, [FromQuery]string[]? keywords, DateTime? startDate, DateTime? endDate, string? secondaryDescription, string? secondaryCreator, string? description)
+        public async Task<Result<List<NasaImages>>> GetNasaImages(int count, int offset, string? title, string? center, string? nasaId, string? mediaType, [FromQuery]string[]? keywords, DateTime? startDate, DateTime? endDate, string? secondaryDescription, string? secondaryCreator, string? description)
         {
             try
             {
-                var projection = await NasaImages.Find(_ => true).Project(n => new NasaImagesUserFriendlyModel
+                var projection = await NasaImages.Find(_ => true).Project(n => new NasaImages
                 {
                     Id = n.Id,
                     NASAId = n.NASAId,
@@ -175,18 +174,18 @@ namespace StellarStreamAPI.Database
                 }
 
                 var result = query.Skip(offset).Take(count).ToList();
-                return Result<List<NasaImagesUserFriendlyModel>>.Success(result);
+                return Result<List<NasaImages>>.Success(result);
             }
-            catch (InvalidCastException ex) { return Result<List<NasaImagesUserFriendlyModel>>.Fail(ex); } 
-            catch (MongoException ex) { return Result<List<NasaImagesUserFriendlyModel>>.Fail(ex); }
-            catch (Exception ex) { return Result<List<NasaImagesUserFriendlyModel>>.Fail(ex); }
+            catch (InvalidCastException ex) { return Result<List<NasaImages>>.Fail(ex); } 
+            catch (MongoException ex) { return Result<List<NasaImages>>.Fail(ex); }
+            catch (Exception ex) { return Result<List<NasaImages>>.Fail(ex); }
         }
 
-        public async Task<Result<List<MarsPhotosUserFriendlyModel>>> GetMarsPhotos(int count, int offset, int? startSol, int? endSol, string? cameraName, DateTime? startDate, DateTime? endDate, string? roverName)
+        public async Task<Result<List<MarsPhotos>>> GetMarsPhotos(int count, int offset, int? startSol, int? endSol, string? cameraName, DateTime? startDate, DateTime? endDate, string? roverName)
         {
             try
             {
-                var projection = await MarsPhotos.Find(_ => true).Project(n => new MarsPhotosUserFriendlyModel
+                var projection = await MarsPhotos.Find(_ => true).Project(n => new MarsPhotos
                 {
                     Camera = n.Camera,
                     EarthDate = n.EarthDate,
@@ -240,28 +239,28 @@ namespace StellarStreamAPI.Database
                 
                 if(!string.IsNullOrEmpty(cameraName))
                 {
-                    query = query.Where(x => Newtonsoft.Json.JsonConvert.DeserializeObject<MarsPhotosCameraModel>((string)x.Camera).name.Contains(cameraName));
+                    query = query.Where(x => x.Camera.name.Contains(cameraName));
                 }
                 if(!string.IsNullOrEmpty(roverName))
                 {
-                    query = query.Where(x => Newtonsoft.Json.JsonConvert.DeserializeObject<MarsPhotosRoverModel>((string)x.Rover).name.Contains(roverName));
+                    query = query.Where(x => x.Rover.name.Contains(roverName));
                 }
 
                 var result = query.Skip(offset).Take(count).ToList();
-                return Result<List<MarsPhotosUserFriendlyModel>>.Success(result);
+                return Result<List<MarsPhotos>>.Success(result);
             }
-            catch (FormatException ex) { return Result<List<MarsPhotosUserFriendlyModel>>.Fail(ex); }
-            catch (ArgumentException ex) { return Result<List<MarsPhotosUserFriendlyModel>>.Fail(ex); }
-            catch (OverflowException ex) { return Result<List<MarsPhotosUserFriendlyModel>>.Fail(ex); }
-            catch (MongoException ex) { return Result<List<MarsPhotosUserFriendlyModel>>.Fail(ex); }
-            catch (Exception ex) { return Result<List<MarsPhotosUserFriendlyModel>>.Fail(ex); }
+            catch (FormatException ex) { return Result<List<MarsPhotos>>.Fail(ex); }
+            catch (ArgumentException ex) { return Result<List<MarsPhotos>>.Fail(ex); }
+            catch (OverflowException ex) { return Result<List<MarsPhotos>>.Fail(ex); }
+            catch (MongoException ex) { return Result<List<MarsPhotos>>.Fail(ex); }
+            catch (Exception ex) { return Result<List<MarsPhotos>>.Fail(ex); }
         }
 
-        public async Task<Result<List<ApodUserFriendlyModel>>> GetApods(int count, int offset, string? title, string? explanation, DateTime? startDate, DateTime? endDate, string? copyright, string? mediaType)
+        public async Task<Result<List<Apod>>> GetApods(int count, int offset, string? title, string? explanation, DateTime? startDate, DateTime? endDate, string? copyright, string? mediaType)
         {
             try
             {
-                var projection = await Apods.Find(_ => true).Project(n => new ApodUserFriendlyModel
+                var projection = await Apods.Find(_ => true).Project(n => new Apod
                 {
                     Copyright = n.Copyright,
                     Date = n.Date,
@@ -314,10 +313,10 @@ namespace StellarStreamAPI.Database
                 }
 
                 var result = query.Skip(offset).Take(count).ToList();
-                return Result<List<ApodUserFriendlyModel>>.Success(result);
+                return Result<List<Apod>>.Success(result);
             }
-            catch (MongoException ex) { return Result<List<ApodUserFriendlyModel>>.Fail(ex); }
-            catch (Exception ex) { return Result<List<ApodUserFriendlyModel>>.Fail(ex); }
+            catch (MongoException ex) { return Result<List<Apod>>.Fail(ex); }
+            catch (Exception ex) { return Result<List<Apod>>.Fail(ex); }
         }
 
         public async Task<Result<long>> GetNewsCount()

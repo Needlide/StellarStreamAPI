@@ -1,4 +1,4 @@
-﻿namespace StellarStreamAPI.POCOs.Models.Content
+﻿namespace StellarStreamAPI.POCOs.Content.MarsPhotosSubmodels
 {
     public class MarsPhotosCameraModel
     {

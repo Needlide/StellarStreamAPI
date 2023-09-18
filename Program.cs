@@ -13,12 +13,11 @@ using StellarStreamAPI.Security;
 using StellarStreamAPI.Security.JWT;
 using StellarStreamAPI.Security.Validators;
 using System.Net;
-using System.Reflection;
 using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
-string AllowedOriginsPolicyName = "AllowedSpecificOrigins";
+string AllowedOriginsPolicyName = "CorsDebugPolicy";
 
 builder.Services.Configure<StellarStreamApiSecurityDBSettings>(builder.Configuration.GetSection("stellarstreamapisecuritydb"));
 builder.Services.Configure<AcuDbContentDBSettings>(builder.Configuration.GetSection("ACU_DB"));
@@ -167,6 +166,10 @@ app.UseHttpsRedirection();
 
 app.UseRouting();
 
+//app.UseCors(builder => builder
+//        .AllowAnyOrigin()
+//        .AllowAnyMethod()
+//        .AllowAnyHeader().WithHeaders("Authorization", "X-API-KEY"));
 app.UseCors(AllowedOriginsPolicyName);
 
 app.UseAuthentication();

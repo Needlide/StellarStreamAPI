@@ -1,17 +1,15 @@
-﻿using MongoDB.Bson.Serialization.Attributes;
-using MongoDB.Bson;
+﻿using StellarStreamAPI.Abstraction;
+using StellarStreamAPI.POCOs.Content.MarsPhotosSubmodels;
 
 namespace StellarStreamAPI.POCOs.Content
 {
-    public class MarsPhotos
+    public class MarsPhotos : DbEntityBase
     {
-        [BsonId]
-        public ObjectId _id { get; set; }
-        public int Id { get; set; }
-        public int Sol { get; set; }
-        public object Camera { get; set; }
-        public string ImgSrc { get; set; }
-        public string EarthDate { get; set; }
-        public object Rover { get; set; }
+        internal int Id { get; set; }
+        internal int Sol { get; set; }
+        internal MarsPhotosCameraModel Camera { get; set; }
+        internal string ImgSrc { get; set; }
+        internal string EarthDate { get; set; }
+        internal MarsPhotosRoverModel Rover { get; set; }
     }
 }
