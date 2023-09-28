@@ -176,10 +176,6 @@ app.UseHttpsRedirection();
 
 app.UseRouting();
 
-//app.UseCors(builder => builder
-//        .AllowAnyOrigin()
-//        .AllowAnyMethod()
-//        .AllowAnyHeader().WithHeaders("Authorization", "X-API-KEY"));
 app.UseCors(AllowedOriginsPolicyName);
 
 app.UseAuthentication();

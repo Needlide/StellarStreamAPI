@@ -1,19 +1,32 @@
 ﻿using MongoDB.Bson;
-using StellarStreamAPI.Abstraction;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace StellarStreamAPI.POCOs.Content
 {
-    public class NasaImages : EntityBase
+    public class NasaImages
     {
+        [BsonElement("center")]
         public string Center { get; set; }
+
+        [BsonElement("title")]
         public string Title { get; set; }
-        public string NASAId { get; set; }
+
+        [BsonElement("nasa_id")]
+        public string NasaId { get; set; }
+
+        [BsonElement("media_type")]
         public string MediaType { get; set; }
-        public BsonArray Keywords { get; set; }
+
+        [BsonElement("keywords")]
+        public List<string> Keywords { get; set; }
+
+        [BsonElement("date_created")]
         public DateTime DateCreated { get; set; }
-        public string SecondaryDescription { get; set; }
-        public string SecondaryCreator { get; set; }
+
+        [BsonElement("description")]
         public string Description { get; set; }
-        public string Href { get; set; }
+
+        [BsonElement("album")]
+        public List<string> Album { get; set; }
     }
 }

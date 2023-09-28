@@ -36,7 +36,9 @@ namespace StellarStreamAPI.Database
                     NewsSite = n.NewsSite,
                     Summary = n.Summary,
                     PublishedAt = n.PublishedAt,
-                    UpdatedAt = n.UpdatedAt
+                    UpdatedAt = n.UpdatedAt,
+                    Featured = n.Featured,
+                    Launches = n.Launches
                 }).ToListAsync();
 
                 var query = projection.AsQueryable();
@@ -99,57 +101,39 @@ namespace StellarStreamAPI.Database
             catch (Exception ex) { return Result<List<NewsThumbnails>>.Fail(ex); }
         }
 
-        public async Task<Result<List<NasaImages>>> GetNasaImages(int count, int offset, string? title, string? center, string? nasaId, string? mediaType, [FromQuery]string[]? keywords, DateTime? startDate, DateTime? endDate, string? secondaryDescription, string? secondaryCreator, string? description)
+        public async Task<Result<List<NasaImages>>> GetNasaImages(int count, int offset, string? title, string? center, string? nasaId, string? mediaType, [FromQuery] string[]? keywords, DateTime? startDate, DateTime? endDate, string? description)
         {
             try
             {
-                var projection = await NasaImages.Find(_ => true).Project(n => new NasaImages
-                {
-                    NASAId = n.NASAId,
-                    Center = n.Center,
-                    DateCreated = n.DateCreated,
-                    Description = n.Description,
-                    Href = n.Href,
-                    Keywords = n.Keywords,
-                    MediaType = n.MediaType,
-                    SecondaryCreator = n.SecondaryCreator,
-                    SecondaryDescription = n.SecondaryDescription,
-                    Title = n.Title
-                }).ToListAsync();
+                var projection = await NasaImages.Find(_ => true)
+                                  .Project<NasaImages>("{ _id: 0 }")
+                                  .ToListAsync();
 
                 var query = projection.AsQueryable();
 
-                if(!string.IsNullOrEmpty(title))
+                if (!string.IsNullOrEmpty(title))
                 {
                     query = query.Where(query => query.Title.Contains(title));
                 }
-                if(!string.IsNullOrEmpty(center))
+                if (!string.IsNullOrEmpty(center))
                 {
-                    query = query.Where(query=> query.Center.Contains(center));
+                    query = query.Where(query => query.Center.Contains(center));
                 }
-                if(!string.IsNullOrEmpty(description))
+                if (!string.IsNullOrEmpty(description))
                 {
                     query = query.Where(x => x.Description.Contains(description));
                 }
-                if(!string.IsNullOrEmpty(secondaryCreator))
-                {
-                    query = query.Where(x => x.SecondaryCreator.Contains(secondaryCreator));
-                }
-                if(!string.IsNullOrEmpty(mediaType))
+                if (!string.IsNullOrEmpty(mediaType))
                 {
                     query = query.Where(x => x.MediaType.Contains(mediaType));
                 }
-                if(!string.IsNullOrEmpty(nasaId))
+                if (!string.IsNullOrEmpty(nasaId))
                 {
-                    query = query.Where(x => x.NASAId.Contains(nasaId));
-                }
-                if (!string.IsNullOrEmpty(secondaryDescription))
-                {
-                    query = query.Where(x => x.SecondaryDescription.Contains(secondaryDescription));
+                    query = query.Where(x => x.NasaId.Contains(nasaId));
                 }
                 if (keywords != null && keywords.Any())
                 {
-                    query = query.Where(image => image.Keywords.Any(keyword => keywords.Contains(keyword.AsString)));
+                    query = query.Where(image => image.Keywords.Any(keyword => keywords.Contains(keyword)));
                 }
                 if (startDate.HasValue && endDate.HasValue)
                 {
@@ -174,7 +158,7 @@ namespace StellarStreamAPI.Database
                 var result = query.Skip(offset).Take(count).ToList();
                 return Result<List<NasaImages>>.Success(result);
             }
-            catch (InvalidCastException ex) { return Result<List<NasaImages>>.Fail(ex); } 
+            catch (InvalidCastException ex) { return Result<List<NasaImages>>.Fail(ex); }
             catch (MongoException ex) { return Result<List<NasaImages>>.Fail(ex); }
             catch (Exception ex) { return Result<List<NasaImages>>.Fail(ex); }
         }
@@ -185,12 +169,12 @@ namespace StellarStreamAPI.Database
             {
                 var projection = await MarsPhotos.Find(_ => true).Project(n => new MarsPhotos
                 {
+                    Sol = n.Sol,
+                    ImgSrc = n.ImgSrc,
                     Camera = n.Camera,
                     EarthDate = n.EarthDate,
-                    ImgSrc = n.ImgSrc,
-                    Rover = n.Rover,
-                    Sol = n.Sol
-                }).ToListAsync();//projection contains objects with null values
+                    Rover = n.Rover
+                }).ToListAsync();
 
                 var query = projection.AsQueryable();
 
@@ -218,29 +202,29 @@ namespace StellarStreamAPI.Database
                 {
                     if (startDate > endDate)
                     {
-                        query = query.Where(x => DateTime.Parse(x.EarthDate) == endDate);
+                        query = query.Where(x => x.EarthDate == endDate);
                     }
                     else
                     {
-                        query = query.Where(x => DateTime.Parse(x.EarthDate) > startDate && DateTime.Parse(x.EarthDate) < endDate);
+                        query = query.Where(x => x.EarthDate > startDate && x.EarthDate < endDate);
                     }
                 }
                 else if (endDate.HasValue)
                 {
-                    query = query.Where(x => DateTime.Parse(x.EarthDate) == endDate);
+                    query = query.Where(x => x.EarthDate == endDate);
                 }
                 else if (startDate.HasValue)
                 {
-                    query = query.Where(x => DateTime.Parse(x.EarthDate) == startDate);
+                    query = query.Where(x => x.EarthDate == startDate);
                 }
-                
-                if(!string.IsNullOrEmpty(cameraName))
+
+                if (!string.IsNullOrEmpty(cameraName))
                 {
-                    query = query.Where(x => x.Camera.name.Contains(cameraName));
+                    query = query.Where(x => x.Camera.Name.Contains(cameraName));
                 }
-                if(!string.IsNullOrEmpty(roverName))
+                if (!string.IsNullOrEmpty(roverName))
                 {
-                    query = query.Where(x => x.Rover.name.Contains(roverName));
+                    query = query.Where(x => x.Rover.Name.Contains(roverName));
                 }
 
                 var result = query.Skip(offset).Take(count).ToList();
@@ -266,12 +250,13 @@ namespace StellarStreamAPI.Database
                     MediaType = n.MediaType,
                     ServiceVersion = n.ServiceVersion,
                     Title = n.Title,
-                    Url = n.Url
+                    Url = n.Url,
+                    Concepts = n.Concepts
                 }).ToListAsync();
 
                 var query = projection.AsQueryable();
 
-                if(!string.IsNullOrEmpty(title))
+                if (!string.IsNullOrEmpty(title))
                 {
                     query = query.Where(x => x.Title.Contains(title));
                 }
@@ -283,7 +268,7 @@ namespace StellarStreamAPI.Database
                 {
                     query = query.Where(x => x.Explanation.Contains(explanation));
                 }
-                if(!string.IsNullOrEmpty(mediaType))
+                if (!string.IsNullOrEmpty(mediaType))
                 {
                     query = query.Where(x => x.MediaType.Contains(mediaType));
                 }

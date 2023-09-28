@@ -83,9 +83,9 @@ namespace StellarStreamAPI.Controllers
         }
 
         [HttpGet("/nasa-library")]
-        public async Task<IActionResult> NasaLibrary(string? title, string? center, string? nasaId, string? mediaType, string[]? keywords, DateTime? startDate, DateTime? endDate, string? secondaryDescription, string? secondaryCreator, string? description, int count = 10, int offset = 0)
+        public async Task<IActionResult> NasaLibrary(string? title, string? center, string? nasaId, string? mediaType, [FromQuery]string[]? keywords, DateTime? startDate, DateTime? endDate, string? description, int count = 10, int offset = 0)
         {
-            var result = await _dbContext.GetNasaImages(count, offset, title, center, nasaId, mediaType, keywords, startDate, endDate, secondaryDescription, secondaryCreator, description);
+            var result = await _dbContext.GetNasaImages(count, offset, title, center, nasaId, mediaType, keywords, startDate, endDate, description);
 
             if (!result.IsSuccess)
             {
