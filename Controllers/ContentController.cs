@@ -70,7 +70,7 @@ namespace StellarStreamAPI.Controllers
         }
 
         [HttpGet("/news")]
-        public async Task<IActionResult> News(string? title, string? newsSite, string? startDateP, string? endDateP, string? startDateU, string? endDateU, int count = 10, int offset = 0)
+        public async Task<IActionResult> News(string? title, string? newsSite, DateTime? startDateP, DateTime? endDateP, DateTime? startDateU, DateTime? endDateU, int count = 10, int offset = 0)
         {
             var result = await _dbContext.GetNews(count, offset, title, newsSite, startDateP, endDateP, startDateU, endDateU);
 
@@ -83,7 +83,7 @@ namespace StellarStreamAPI.Controllers
         }
 
         [HttpGet("/nasa-library")]
-        public async Task<IActionResult> NasaLibrary(string? title, string? center, string? nasaId, string? mediaType, [FromQuery]string[]? keywords, string? startDate, string? endDate, string? description, int count = 10, int offset = 0)
+        public async Task<IActionResult> NasaLibrary(string? title, string? center, string? nasaId, string? mediaType, [FromQuery]string[]? keywords, DateTime? startDate, DateTime? endDate, string? description, int count = 10, int offset = 0)
         {
             var result = await _dbContext.GetNasaImages(count, offset, title, center, nasaId, mediaType, keywords, startDate, endDate, description);
 
@@ -96,7 +96,7 @@ namespace StellarStreamAPI.Controllers
         }
 
         [HttpGet("/mars-rover-photos")]
-        public async Task<IActionResult> MarsPhotos(int? startSol, int? endSol, string? cameraName, string? startDate, string? endDate, string? roverName, int count = 10, int offset = 0)
+        public async Task<IActionResult> MarsPhotos(int? startSol, int? endSol, string? cameraName, DateTime? startDate, DateTime? endDate, string? roverName, int count = 10, int offset = 0)
         {
             var result = await _dbContext.GetMarsPhotos(count, offset, startSol, endSol, cameraName, startDate, endDate, roverName);
 
@@ -109,7 +109,7 @@ namespace StellarStreamAPI.Controllers
         }
 
         [HttpGet("/apod")]
-        public async Task<IActionResult> Apod(string? title, string? explanation, string? startDate, string? endDate, string? copyright, string? mediaType, int count = 10, int offset = 0)
+        public async Task<IActionResult> Apod(string? title, string? explanation, DateTime? startDate, DateTime? endDate, string? copyright, string? mediaType, int count = 10, int offset = 0)
         {
             var result = await _dbContext.GetApods(count, offset, title, explanation, startDate, endDate, copyright, mediaType);
 
