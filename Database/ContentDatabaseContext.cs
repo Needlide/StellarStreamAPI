@@ -28,7 +28,26 @@ namespace StellarStreamAPI.Database
         {
             try
             {
-                var projection = await News.Find(_ => true).Project(n => new NewsThumbnails
+                var filter = Builders<NewsThumbnails>.Filter.Empty;
+
+                if (startDateP.HasValue)
+                {
+                    filter &= Builders<NewsThumbnails>.Filter.Gte(n => n.PublishedAt, startDateP.Value);
+                }
+                if (endDateP.HasValue)
+                {
+                    filter &= Builders<NewsThumbnails>.Filter.Lte(n => n.PublishedAt, endDateP.Value);
+                }
+                if (startDateU.HasValue)
+                {
+                    filter &= Builders<NewsThumbnails>.Filter.Gte(n => n.UpdatedAt, startDateU.Value);
+                }
+                if (endDateU.HasValue)
+                {
+                    filter &= Builders<NewsThumbnails>.Filter.Lte(n => n.UpdatedAt, endDateU.Value);
+                }
+
+                var projection = await News.Find(filter).Project(n => new NewsThumbnails
                 {
                     Title = n.Title,
                     Url = n.Url,
@@ -44,52 +63,9 @@ namespace StellarStreamAPI.Database
                 var query = projection.AsQueryable();
 
                 if (!string.IsNullOrEmpty(title))
-                {
-                    query = query.Where(x => x.Title.Contains(title));
-                }
+                    query = query.Where(x => x.Title != null && x.Title.Contains(title));
                 if (!string.IsNullOrEmpty(newsSite))
-                {
                     query = query.Where(query => query.NewsSite == newsSite);
-                }
-                if (startDateP.HasValue && endDateP.HasValue)
-                {
-                    if (startDateP > endDateP)
-                    {
-                        query = query.Where(x => x.PublishedAt == endDateP);
-                    }
-                    else
-                    {
-                        query = query.Where(x => x.PublishedAt > startDateP && x.PublishedAt < endDateP);
-                    }
-                }
-                else if (endDateP.HasValue)
-                {
-                    query = query.Where(x => x.PublishedAt == endDateP);
-                }
-                else if (startDateP.HasValue)
-                {
-                    query = query.Where(x => x.PublishedAt == startDateP);
-                }
-
-                if (startDateU.HasValue && endDateU.HasValue)
-                {
-                    if (startDateU > endDateU)
-                    {
-                        query = query.Where(x => x.UpdatedAt == endDateU);
-                    }
-                    else
-                    {
-                        query = query.Where(x => x.UpdatedAt > startDateU && x.UpdatedAt < endDateU);
-                    }
-                }
-                else if (endDateU.HasValue)
-                {
-                    query = query.Where(x => x.UpdatedAt == endDateU);
-                }
-                else if (startDateU.HasValue)
-                {
-                    query = query.Where(x => x.UpdatedAt == startDateU);
-                }
 
                 count = count < 0 ? 10 : count;
 
@@ -105,7 +81,18 @@ namespace StellarStreamAPI.Database
         {
             try
             {
-                var projection = await NasaImages.Find(_ => true)
+                var filter = Builders<NasaImages>.Filter.Empty;
+
+                if(startDate.HasValue)
+                {
+                    filter &= Builders<NasaImages>.Filter.Gte(n => n.DateCreated, startDate.Value);
+                }
+                if(endDate.HasValue)
+                {
+                    filter &= Builders<NasaImages>.Filter.Lte(n => n.DateCreated, endDate.Value);
+                }
+
+                var projection = await NasaImages.Find(filter)
                                   .Project<NasaImages>("{ _id: 0 }")
                                   .ToListAsync();
 
@@ -113,46 +100,27 @@ namespace StellarStreamAPI.Database
 
                 if (!string.IsNullOrEmpty(title))
                 {
-                    query = query.Where(query => query.Title.Contains(title));
+                    query = query.Where(query => query.Title != null && query.Title.Contains(title));
                 }
                 if (!string.IsNullOrEmpty(center))
                 {
-                    query = query.Where(query => query.Center.Contains(center));
+                    query = query.Where(query => query.Center != null && query.Center.Contains(center));
                 }
                 if (!string.IsNullOrEmpty(description))
                 {
-                    query = query.Where(x => x.Description.Contains(description));
+                    query = query.Where(x => x.Description != null && x.Description.Contains(description));
                 }
                 if (!string.IsNullOrEmpty(mediaType))
                 {
-                    query = query.Where(x => x.MediaType.Contains(mediaType));
+                    query = query.Where(x => x.MediaType != null && x.MediaType.Contains(mediaType));
                 }
                 if (!string.IsNullOrEmpty(nasaId))
                 {
-                    query = query.Where(x => x.NasaId.Contains(nasaId));
+                    query = query.Where(x => x.NasaId != null && x.NasaId.Contains(nasaId));
                 }
                 if (keywords != null && keywords.Any())
                 {
                     query = query.Where(image => image.Keywords.Any(keyword => keywords.Contains(keyword)));
-                }
-                if (startDate.HasValue && endDate.HasValue)
-                {
-                    if (startDate > endDate)
-                    {
-                        query = query.Where(x => x.DateCreated == endDate);
-                    }
-                    else
-                    {
-                        query = query.Where(x => x.DateCreated > startDate && x.DateCreated < endDate);
-                    }
-                }
-                else if (endDate.HasValue)
-                {
-                    query = query.Where(x => x.DateCreated == endDate);
-                }
-                else if (startDate.HasValue)
-                {
-                    query = query.Where(x => x.DateCreated == startDate);
                 }
 
                 var result = query.Skip(offset).Take(count).ToList();
@@ -167,7 +135,18 @@ namespace StellarStreamAPI.Database
         {
             try
             {
-                var projection = await MarsPhotos.Find(_ => true).Project(n => new MarsPhotos
+                var filter = Builders<MarsPhotos>.Filter.Empty;
+
+                if (startDate.HasValue)
+                {
+                    filter &= Builders<MarsPhotos>.Filter.Gte(m => m.EarthDate, startDate.Value);
+                }
+                if (endDate.HasValue)
+                {
+                    filter &= Builders<MarsPhotos>.Filter.Lte(m => m.EarthDate, endDate.Value);
+                }
+
+                var projection = await MarsPhotos.Find(filter).Project(n => new MarsPhotos
                 {
                     Sol = n.Sol,
                     ImgSrc = n.ImgSrc,
@@ -198,33 +177,13 @@ namespace StellarStreamAPI.Database
                     query = query.Where(x => x.Sol == startSol);
                 }
 
-                if (startDate.HasValue && endDate.HasValue)
-                {
-                    if (startDate > endDate)
-                    {
-                        query = query.Where(x => x.EarthDate == endDate);
-                    }
-                    else
-                    {
-                        query = query.Where(x => x.EarthDate > startDate && x.EarthDate < endDate);
-                    }
-                }
-                else if (endDate.HasValue)
-                {
-                    query = query.Where(x => x.EarthDate == endDate);
-                }
-                else if (startDate.HasValue)
-                {
-                    query = query.Where(x => x.EarthDate == startDate);
-                }
-
                 if (!string.IsNullOrEmpty(cameraName))
                 {
-                    query = query.Where(x => x.Camera.Name.Contains(cameraName));
+                    query = query.Where(x => x.Camera.Name != null && x.Camera.Name.Contains(cameraName));
                 }
                 if (!string.IsNullOrEmpty(roverName))
                 {
-                    query = query.Where(x => x.Rover.Name.Contains(roverName));
+                    query = query.Where(x => x.Rover.Name != null && x.Rover.Name.Contains(roverName));
                 }
 
                 var result = query.Skip(offset).Take(count).ToList();
@@ -241,7 +200,18 @@ namespace StellarStreamAPI.Database
         {
             try
             {
-                var projection = await Apods.Find(_ => true).Project(n => new Apod
+                var filter = Builders<Apod>.Filter.Empty;
+
+                if (startDate.HasValue)
+                {
+                    filter &= Builders<Apod>.Filter.Gte(a => a.Date, startDate.Value);
+                }
+                if (endDate.HasValue)
+                {
+                    filter &= Builders<Apod>.Filter.Lte(a => a.Date, endDate.Value);
+                }
+
+                var projection = await Apods.Find(filter).Project(n => new Apod
                 {
                     Copyright = n.Copyright,
                     Date = n.Date,
@@ -258,39 +228,19 @@ namespace StellarStreamAPI.Database
 
                 if (!string.IsNullOrEmpty(title))
                 {
-                    query = query.Where(x => x.Title.Contains(title));
+                    query = query.Where(x => x.Title != null && x.Title.Contains(title));
                 }
                 if (!string.IsNullOrEmpty(copyright))
                 {
-                    query = query.Where(x => x.Copyright.Contains(copyright));
+                    query = query.Where(x => x.Copyright != null && x.Copyright.Contains(copyright));
                 }
                 if (!string.IsNullOrEmpty(explanation))
                 {
-                    query = query.Where(x => x.Explanation.Contains(explanation));
+                    query = query.Where(x => x.Explanation != null && x.Explanation.Contains(explanation));
                 }
                 if (!string.IsNullOrEmpty(mediaType))
                 {
-                    query = query.Where(x => x.MediaType.Contains(mediaType));
-                }
-
-                if (startDate.HasValue && endDate.HasValue)
-                {
-                    if (startDate > endDate)
-                    {
-                        query = query.Where(x => DateTime.Parse(x.Date) == endDate);
-                    }
-                    else
-                    {
-                        query = query.Where(x => DateTime.Parse(x.Date) > startDate && DateTime.Parse(x.Date) < endDate);
-                    }
-                }
-                else if (endDate.HasValue)
-                {
-                    query = query.Where(x => DateTime.Parse(x.Date) == endDate);
-                }
-                else if (startDate.HasValue)
-                {
-                    query = query.Where(x => DateTime.Parse(x.Date) == startDate);
+                    query = query.Where(x => x.MediaType != null && x.MediaType.Contains(mediaType));
                 }
 
                 var result = query.Skip(offset).Take(count).ToList();

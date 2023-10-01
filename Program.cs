@@ -4,14 +4,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using MongoDB.Bson.Serialization;
-using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
-using StellarStreamAPI.Abstraction;
 using StellarStreamAPI.Database;
 using StellarStreamAPI.Interfaces;
 using StellarStreamAPI.Middleware;
-using StellarStreamAPI.POCOs.Content;
 using StellarStreamAPI.POCOs.Models.Security;
 using StellarStreamAPI.Security;
 using StellarStreamAPI.Security.JWT;
@@ -42,12 +38,6 @@ builder.Configuration.AddUserSecrets<Program>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("CorsDebugPolicy", policy => { policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod(); });
-});
-
-BsonClassMap.RegisterClassMap<EntityBase>(cm =>
-{
-    cm.AutoMap();
-    cm.MapIdProperty(c => c._id).SetElementName("_id").SetSerializer(new ObjectIdSerializer(MongoDB.Bson.BsonType.ObjectId));
 });
 
 builder.Services.AddAuthentication(options =>
