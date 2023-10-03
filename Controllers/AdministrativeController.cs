@@ -5,6 +5,7 @@ using MongoDB.Bson;
 using StellarStreamAPI.Interfaces;
 using StellarStreamAPI.POCOs.Models.Security;
 using StellarStreamAPI.POCOs.Security;
+using StellarStreamAPI.Security;
 using StellarStreamAPI.Security.JWT;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
@@ -38,7 +39,7 @@ namespace StellarStreamAPI.Controllers
                 return BadRequest(ModelState);
             }
 
-            string encryptedPass = _symmetricEncryptor.Encrypt(model.Password);
+            string hashedPassword = BCryptHash.Hash(model.Password);/*_symmetricEncryptor.Encrypt(model.Password);*/
 
             Result<bool> emailExistResult = await _dbContext.ApiKeyConsumerExistAsync(model.Email);
 
@@ -56,7 +57,7 @@ namespace StellarStreamAPI.Controllers
             {
                 UserId = BitConverter.ToInt64(Guid.NewGuid().ToByteArray(), 0),
                 Email = model.Email,
-                Password = encryptedPass
+                Password = hashedPassword
             };
             Result<bool> saveResult = await _dbContext.SaveApiKeyConsumerAsync(consumer);
 
@@ -92,6 +93,7 @@ namespace StellarStreamAPI.Controllers
             }
 
             string JWT = GenerateJWT(model.Email);
+
             if (string.IsNullOrEmpty(JWT))
             {
                 return StatusCode((int)HttpStatusCode.InternalServerError);
@@ -233,10 +235,11 @@ namespace StellarStreamAPI.Controllers
 
         private bool VerifyPassword(string enteredPassword, string storedHash)
         {
-            string storedPassword = _symmetricEncryptor.Decrypt(storedHash);
-            if (storedPassword.Equals(enteredPassword))
-                return true;
-            return false;
+            //string storedPassword = _symmetricEncryptor.Decrypt(storedHash);
+            //if (storedPassword.Equals(enteredPassword))
+            //    return true;
+            //return false;
+            return BCryptHash.Verify(enteredPassword, storedHash);
         }
 
         private string GenerateJWT(string email)
