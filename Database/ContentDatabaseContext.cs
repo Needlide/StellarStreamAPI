@@ -11,7 +11,7 @@ namespace StellarStreamAPI.Database
     public class ContentDatabaseContext : IMongoContentDatabaseContext
     {
         private readonly IMongoCollection<NewsThumbnails> News;
-        private readonly IMongoCollection<NasaImages> NasaImages;
+        private readonly IMongoCollection<Item> NasaImages;
         private readonly IMongoCollection<MarsPhotos> MarsPhotos;
         private readonly IMongoCollection<Apod> Apods;
 
@@ -19,7 +19,7 @@ namespace StellarStreamAPI.Database
         {
             var database = mongoClient.GetDatabase(databaseSettings.Value.DatabaseName);
             News = database.GetCollection<NewsThumbnails>(databaseSettings.Value.NewsCollectionName);
-            NasaImages = database.GetCollection<NasaImages>(databaseSettings.Value.NASAGalleryCollectionName);
+            NasaImages = database.GetCollection<Item>(databaseSettings.Value.NASAGalleryCollectionName);
             MarsPhotos = database.GetCollection<MarsPhotos>(databaseSettings.Value.MarsPhotosCollectionName);
             Apods = database.GetCollection<Apod>(databaseSettings.Value.PictureOfTheDayCollectionName);
         }
@@ -77,58 +77,80 @@ namespace StellarStreamAPI.Database
             catch (Exception ex) { return Result<List<NewsThumbnails>>.Fail(ex); }
         }
 
-        public async Task<Result<List<NasaImages>>> GetNasaImages(int count, int offset, string? title, string? center, string? nasaId, string? mediaType, [FromQuery] string[]? keywords, DateTime? startDate, DateTime? endDate, string? description)
+        public async Task<Result<List<Item>>> GetNasaImages(int count, int offset, string? title, string? center, string? nasaId, string? mediaType, [FromQuery] string[]? keywords, DateTime? startDate, DateTime? endDate, string? description, string? contentType)
         {
             try
             {
-                var filter = Builders<NasaImages>.Filter.Empty;
+                var filter = Builders<Item>.Filter.Empty;
 
-                if(startDate.HasValue)
+                //if(startDate.HasValue)
+                //{
+                //    filter &= Builders<Item>.Filter.Gte(n => n.Data.AllElements().DateCreated, startDate.Value);
+                //}
+                //if(endDate.HasValue)
+                //{
+                //    filter &= Builders<Item>.Filter.Lte(n => n.Data.AllElements().DateCreated, endDate.Value);
+                //}
+
+                var filterBuilder = Builders<Item>.Filter;
+
+                if (startDate.HasValue)
                 {
-                    filter &= Builders<NasaImages>.Filter.Gte(n => n.DateCreated, startDate.Value);
+                    var dateFilter = filterBuilder.ElemMatch(
+                        x => x.Data,
+                        data => data.DateCreated >= startDate.Value
+                    );
+
+                    filter &= dateFilter;
                 }
-                if(endDate.HasValue)
+
+                if (startDate.HasValue && endDate.HasValue)
                 {
-                    filter &= Builders<NasaImages>.Filter.Lte(n => n.DateCreated, endDate.Value);
+                    var dateFilter = filterBuilder.ElemMatch(
+                        x => x.Data,
+                        data => data.DateCreated <= endDate.Value
+                    );
+
+                    filter &= dateFilter;
                 }
 
                 var projection = await NasaImages.Find(filter)
-                                  .Project<NasaImages>("{ _id: 0 }")
+                                  .Project<Item>("{ _id: 0 }")
                                   .ToListAsync();
 
                 var query = projection.AsQueryable();
 
                 if (!string.IsNullOrEmpty(title))
                 {
-                    query = query.Where(query => query.Title != null && query.Title.Contains(title));
+                    query = query.Where(x => x.Data.Where(d => d.Title != null) != null && x.Data.Where(d => d.Title.Contains(title)) != null);
                 }
                 if (!string.IsNullOrEmpty(center))
                 {
-                    query = query.Where(query => query.Center != null && query.Center.Contains(center));
+                    query = query.Where(x => x.Data.Where(d => d.Center != null) != null && x.Data.Where(d => d.Center.Contains(center)) != null);
                 }
                 if (!string.IsNullOrEmpty(description))
                 {
-                    query = query.Where(x => x.Description != null && x.Description.Contains(description));
+                    query = query.Where(x => x.Data.Where(d => d.Description != null) != null && x.Data.Where(d => d.Description.Contains(description)) != null);
                 }
                 if (!string.IsNullOrEmpty(mediaType))
                 {
-                    query = query.Where(x => x.MediaType != null && x.MediaType.Contains(mediaType));
+                    query = query.Where(x => x.Data.Where(d => d.MediaType != null) != null && x.Data.Where(d => d.MediaType.Contains(mediaType)) != null);
                 }
                 if (!string.IsNullOrEmpty(nasaId))
                 {
-                    query = query.Where(x => x.NasaId != null && x.NasaId.Contains(nasaId));
+                    query = query.Where(x => x.Data.Where(d => d.NasaId != null) != null && x.Data.Where(d => d.NasaId.Contains(nasaId)) != null);
                 }
                 if (keywords != null && keywords.Any())
                 {
-                    query = query.Where(image => image.Keywords.Any(keyword => keywords.Contains(keyword)));
+                    query = query.Where(x => x.Data.Where(d => d.Keywords.Any(keyword => keywords.Contains(keyword))) != null);
                 }
 
                 var result = query.Skip(offset).Take(count).ToList();
-                return Result<List<NasaImages>>.Success(result);
+                return Result<List<Item>>.Success(result);
             }
-            catch (InvalidCastException ex) { return Result<List<NasaImages>>.Fail(ex); }
-            catch (MongoException ex) { return Result<List<NasaImages>>.Fail(ex); }
-            catch (Exception ex) { return Result<List<NasaImages>>.Fail(ex); }
+            catch (InvalidCastException ex) { return Result<List<Item>>.Fail(ex); }
+            catch (MongoException ex) { return Result<List<Item>>.Fail(ex); }
+            catch (Exception ex) { return Result<List<Item>>.Fail(ex); }
         }
 
         public async Task<Result<List<MarsPhotos>>> GetMarsPhotos(int count, int offset, int? startSol, int? endSol, string? cameraName, DateTime? startDate, DateTime? endDate, string? roverName)
