@@ -83,15 +83,6 @@ namespace StellarStreamAPI.Database
             {
                 var filter = Builders<Item>.Filter.Empty;
 
-                //if(startDate.HasValue)
-                //{
-                //    filter &= Builders<Item>.Filter.Gte(n => n.Data.AllElements().DateCreated, startDate.Value);
-                //}
-                //if(endDate.HasValue)
-                //{
-                //    filter &= Builders<Item>.Filter.Lte(n => n.Data.AllElements().DateCreated, endDate.Value);
-                //}
-
                 var filterBuilder = Builders<Item>.Filter;
 
                 if (startDate.HasValue)
